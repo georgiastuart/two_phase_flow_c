@@ -1,7 +1,8 @@
 import numpy as np
 
-source = np.zeros([64, 64])
-source[63][0] = 10**(-7)
-source[0][63] = -10**(-7)
+dim = 8
+source = np.zeros([dim, dim])
+# source[dim - 1][0] = 10**(-7)
+# source[0][dim - 1] = -10**(-7)
 
-np.savetxt('src_field.txt', source, delimiter='\n')
+np.savetxt('perm_field_small.txt', source, delimiter='\n')

@@ -1,21 +1,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "util.h"
 
+#define PERM_COEF pow(10, -11)
+
 /* Sets up the mesh with cell structs at each gridpoint */
-cell_t* setup_mesh(dim_t dim, double *perm, double *source)
+cell_t* setup_mesh(dim_t dim, double *perm, double perm_strength, double *source)
 {
     int i, j, xdim;
     cell_t *mesh, *cur_cell;
-    mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
 
+    mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
     xdim = dim.xdim;
 
-    for (i = 1; i < dim.ydim; i++) {
-        for (j = 1; j < dim.xdim; j++) {
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
             cur_cell = &mesh[MESH_INDEX(i, j, xdim)];
-            cur_cell->perm = perm[MESH_INDEX_NO_PAD(i, j, xdim)];
+            cur_cell->perm = PERM_COEF * exp(perm_strength * perm[MESH_INDEX_NO_PAD(i, j, xdim)]);
             cur_cell->source = source[MESH_INDEX_NO_PAD(i, j, xdim)];
         }
     }
