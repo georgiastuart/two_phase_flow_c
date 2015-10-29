@@ -7,13 +7,16 @@
 typedef struct dim
 {
     int xdim, ydim;
-    double h, x_left_bound, x_right_bound, y_up_bound, y_low_bound;
+    double h, xphysdim, yphysdim;
 } dim_t;
 
 typedef struct cell
 {
+    /* Values that live at the center of each cell */
     double perm, pressure, source;
-    double q[4], l[4], beta[4];
+
+    /* Values that live along the edges */
+    double flux[4], l[4], beta[4], robin[4], A[4];
 } cell_t;
 
 extern dim_t dim;

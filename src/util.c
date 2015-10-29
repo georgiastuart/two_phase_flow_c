@@ -5,7 +5,7 @@
 #include "util.h"
 #include "mesh.h"
 
-/* For reading permiability and source files */
+/* For reading permeability and source files */
 double* read_file(const char* file_name)
 {
     FILE *fd;
@@ -28,4 +28,47 @@ double* read_file(const char* file_name)
     fclose(fd);
 
     return data;
+}
+
+/* Prints out the specified attribute to the terminal */
+void print_attribute(cell_t *mesh, char *attribute)
+{
+    int i, j, k;
+    if ( !strcmp(attribute, "beta") ) {
+        for (k = 0; k < 4; k++) {
+            switch (k) {
+                case 0:
+                    printf("Left Beta\n-------------------------------------\n");
+                    break;
+                case 1:
+                    printf("Right Beta\n-------------------------------------\n");
+                    break;
+                case 2:
+                    printf("Up Beta\n-------------------------------------\n");
+                    break;
+                case 3:
+                    printf("Down Beta\n-------------------------------------\n");
+                    break;
+            }
+
+            for (i = 0; i < dim.ydim; i++) {
+                for (j = 0; j < dim.xdim; j++) {
+                    printf("%e\t", mesh[MESH_INDEX(i, j)].beta[k]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+    }
+
+    if ( !strcmp(attribute, "perm") ) {
+        printf("PERMEABILITY\n------------------------------------------------\n");
+        for (i = 0; i < dim.ydim; i++) {
+            for (j = 0; j < dim.xdim; j++) {
+                printf("%e\t", mesh[MESH_INDEX(i, j)].perm);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 }

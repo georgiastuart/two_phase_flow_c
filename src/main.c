@@ -5,6 +5,7 @@
 #include "mesh.h"
 
 #define DIM 8
+#define PHYSDIM 25600
 
 int main(int argc, const char* argv[])
 {
@@ -14,12 +15,15 @@ int main(int argc, const char* argv[])
 
     dim.xdim = DIM;
     dim.ydim = DIM;
+    dim.xphysdim = PHYSDIM;
+    dim.yphysdim = PHYSDIM;
+    dim.h = PHYSDIM / DIM;
     perm_strength = 1;
     beta_coef = 1;
 
     /* Reads in the permeability and source fields */
     perm = read_file("perm_field_small.txt");
-    source = read_file("src_field.txt");
+    source = read_file("src_field_small.txt");
 
     /* Initializes the mesh */
     mesh = init_mesh(perm, perm_strength, source, beta_coef);
@@ -28,11 +32,7 @@ int main(int argc, const char* argv[])
     free(perm);
     free(source);
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            printf("%e ", mesh[MESH_INDEX(i, j)].source);
-        }
-        printf("\n");
-    }
+    print_attribute(mesh, "beta");
+
     return 0;
 }

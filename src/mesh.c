@@ -18,7 +18,7 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
     /* Allocates memory for the mesh */
     mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
 
-    /* Sets cell permiability and sources */
+    /* Sets cell permeability and sources */
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {
             cur_cell = &mesh[MESH_INDEX(i, j)];
@@ -27,8 +27,15 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
         }
     }
 
-    /* Computes beta at all mesh points */
-    compute_beta(mesh, c);
+    /* Computes beta and A at all mesh points */
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
+            compute_beta(mesh, i, j, c);
+            compute_A(mesh, i, j);
+        }
+    }
 
     return mesh;
 }
+
+/* Calculates an iteration for the pressure solution */
