@@ -91,3 +91,50 @@ void update_interior(cell_t *mesh, cell_t *mesh_old, int cur_y, int cur_x)
         cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux[k] + cur_cell->l[k];
     }
 }
+
+void update_boundary(cell_t *mesh, cell_t *mesh_old, int cur_y, int cur_x, int boundary_side)
+{
+    int k;
+    cell_t *cur_cell, *cur_cell_old, *adj_cell;
+    double sum_A, sum_A_R, xi;
+
+    sum_A = 0;
+    sum_A_R = 0;
+    xi = 2 * cur_cell->perm / dim.h;
+
+    cur_cell = &mesh[MESH_INDEX(cur_y, cur_x)];
+    cur_cell_old = &mesh_old[MESH_INDEX(cur_y, cur_x)];
+
+    for (k = 0; k < 4; k++) {
+        if (k != boundary_side) {
+            sum_A += cur_cell_old->A[k];
+            sum_A_R += cur_cell_old->A[k] * cur_cell_old->robin[k];
+        }
+    }
+
+    /* Updates the pressure at the current cell on the new mesh */
+    cur_cell->pressure = (cur_cell_old->source * dim.h + sum_A_R) / sum_A;
+
+    /* Updates the flux at the current cell on the new mesh */
+    for (k = 0; k < 4; k++) {
+        if (k != boundary_side) {
+            cur_cell->flux[k] = -xi * (cur_cell->l[k] - cur_cell->pressure);
+        }
+    }
+
+    /* Updates the pressure at the edges of the current cell in the new mesh */
+    for (k = 0; k < 4; k ++) {
+        if (k != boundary_side) {
+            adj_cell = &mesh_old[get_adjacent_index(k, cur_y, cur_x)];
+            cur_cell->l[k] = cur_cell->beta[k] * cur_cell->flux[k] +
+                                adj_cell->robin[(k + 2) % 4];
+        }
+    }
+
+    /* Updates the robin conditions from the new values */
+    for (k = 0; k < 4; k++) {
+        if (k != boundary_side) {
+            cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux[k] + cur_cell->l[k];
+        }
+    }
+}
