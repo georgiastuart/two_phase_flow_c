@@ -27,6 +27,7 @@
 *.i*86
 *.x86_64
 *.hex
+bin/two_phase_flow_c
 
 # Debug files
 *.dSYM/

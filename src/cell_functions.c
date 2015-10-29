@@ -5,10 +5,7 @@
 #include "cell_functions.h"
 
 /* Retrieves the cell adjacent to the current cell
-    0 - left
-    1 - right
-    2 - up
-    3 - down */
+    0 - left, 1 - right, 2 - up, 3 - down */
 int get_adjacent_index(int direction, int cur_y, int cur_x)
 {
     switch (direction) {
@@ -28,7 +25,7 @@ int get_adjacent_index(int direction, int cur_y, int cur_x)
 void compute_beta(cell_t *mesh, double beta_coef)
 {
     int i, j, k;
-    double perm_eff, perm, beta;
+    double perm_eff;
     cell_t *cur_cell, *adj_cell;
 
     for (i = 0; i < dim.ydim; i++) {
@@ -37,6 +34,9 @@ void compute_beta(cell_t *mesh, double beta_coef)
 
             for (k = 0; k < 4; k++) {
                 adj_cell = &mesh[get_adjacent_index(k, i, j)];
+                perm_eff = 2 * adj_cell->perm * cur_cell->perm;
+                perm_eff /= (adj_cell->perm + cur_cell->perm);
+                cur_cell->beta[k] = beta_coef * dim.h / perm_eff;
             }
         }
     }

@@ -12,12 +12,11 @@ dim_t dim;
 /* Sets up the mesh with cell structs at each gridpoint */
 cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
 {
-    int i, j, xdim;
+    int i, j;
     cell_t *mesh, *cur_cell;
 
     /* Allocates memory for the mesh */
     mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
-    xdim = dim.xdim;
 
     /* Sets cell permiability and sources */
     for (i = 0; i < dim.ydim; i++) {
@@ -27,6 +26,9 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
             cur_cell->source = source[MESH_INDEX_NO_PAD(i, j)];
         }
     }
+
+    /* Computes beta at all mesh points */
+    compute_beta(mesh, c);
 
     return mesh;
 }
