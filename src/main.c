@@ -53,6 +53,7 @@ int main(int argc, const char* argv[])
 
     printf("Finished after %d iterations.\n", itr + 1);
     print_attribute(mesh, "pressure");
+    print_attribute_to_file(mesh, "pressure");
 
     return 0;
 }
