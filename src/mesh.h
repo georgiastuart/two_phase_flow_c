@@ -22,5 +22,6 @@ typedef struct cell
 extern dim_t dim;
 
 cell_t* init_mesh(double *perm, double perm_strength, double *source, double c);
+void iteration(cell_t *mesh, cell_t *mesh_old);
 
 #endif /* H_MESH */

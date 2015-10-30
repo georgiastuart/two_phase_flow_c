@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "util.h"
-#include "mesh.h"
 
 /* For reading permeability and source files */
 double* read_file(const char* file_name)
@@ -70,5 +69,25 @@ void print_attribute(cell_t *mesh, char *attribute)
             printf("\n");
         }
         printf("\n");
+    }
+
+    if ( !strcmp(attribute, "pressure") ) {
+        printf("PRESSURE\n----------------------------------------------------\n");
+        for (i = 0; i < dim.ydim; i++) {
+            for (j = 0; j < dim.xdim; j++) {
+                printf("%e\t", mesh[MESH_INDEX(i, j)].pressure);
+            }
+            printf("\n");
+        }
+    }
+
+    if ( !strcmp(attribute, "source") ) {
+        printf("SOURCE\n-------------------------------------------------------\n");
+        for (i = 0; i < dim.ydim; i++) {
+            for (j = 0; j < dim.xdim; j++) {
+                printf("%e\t", mesh[MESH_INDEX(i, j)].source);
+            }
+            printf("\n");
+        }
     }
 }
