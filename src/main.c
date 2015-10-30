@@ -4,30 +4,28 @@
 #include "util.h"
 #include "mesh.h"
 
-#define DIM 8
-#define PHYSDIM 25600
-#define CONV_CUTOFF pow(10, -5)
-
 int main(int argc, const char* argv[])
 {
-    double *perm, *source, perm_strength, beta_coef;
+    double *perm, *source;
     cell_t *mesh, *mesh_old, *temp;
+    config_t config;
 
-    dim.xdim = DIM;
-    dim.ydim = DIM;
-    dim.xphysdim = PHYSDIM;
-    dim.yphysdim = PHYSDIM;
-    dim.h = PHYSDIM / DIM;
-    perm_strength = 1;
-    beta_coef = 1;
+    if (!read_config("input/config.ini", &config))
+        return 1;
+
+    dim.xdim = config.xdim;
+    dim.ydim = config.ydim;
+    dim.xlen = config.xlen;
+    dim.ylen = config.ylen;
+    dim.h = dim.xlen / dim.xdim;
 
     /* Reads in the permeability and source fields */
-    perm = read_file("perm_field_small.txt");
-    source = read_file("src_field_small.txt");
+    perm = read_file(config.perm_file);
+    source = read_file(config.src_file);
 
     /* Initializes the meshes */
-    mesh = init_mesh(perm, perm_strength, source, beta_coef);
-    mesh_old = init_mesh(perm, perm_strength, source, beta_coef);
+    mesh = init_mesh(perm, config.perm_strength, source, config.beta_coef);
+    mesh_old = init_mesh(perm, config.perm_strength, source, config.beta_coef);
 
     /* Frees memory used from the read-in permeability and source fields */
     free(perm);
@@ -37,7 +35,7 @@ int main(int argc, const char* argv[])
     itr = 0;
     for (;;) {
         iteration(mesh, mesh_old);
-        if ( convergence_check(mesh, mesh_old, CONV_CUTOFF) ) {
+        if ( convergence_check(mesh, mesh_old, config.conv_cutoff) ) {
             break;
         }
 

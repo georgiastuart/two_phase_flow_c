@@ -7,7 +7,7 @@
 typedef struct dim
 {
     int xdim, ydim;
-    double h, xphysdim, yphysdim;
+    double h, xlen, ylen;
 } dim_t;
 
 typedef struct cell
