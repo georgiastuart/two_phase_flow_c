@@ -90,4 +90,85 @@ void print_attribute(cell_t *mesh, char *attribute)
             printf("\n");
         }
     }
+
+    if ( !strcmp(attribute, "flux") ) {
+        for (k = 0; k < 4; k++) {
+            switch (k) {
+                case 0:
+                    printf("Up Flux\n-------------------------------------\n");
+                    break;
+                case 1:
+                    printf("Right Flux\n-------------------------------------\n");
+                    break;
+                case 2:
+                    printf("Down Flux\n-------------------------------------\n");
+                    break;
+                case 3:
+                    printf("Left Flux\n-------------------------------------\n");
+                    break;
+            }
+
+            for (i = 0; i < dim.ydim; i++) {
+                for (j = 0; j < dim.xdim; j++) {
+                    printf("%e\t", mesh[MESH_INDEX(i, j)].flux[k]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+    }
+
+    if ( !strcmp(attribute, "l") ) {
+        for (k = 0; k < 4; k++) {
+            switch (k) {
+                case 0:
+                    printf("Up l\n-------------------------------------\n");
+                    break;
+                case 1:
+                    printf("Right l\n-------------------------------------\n");
+                    break;
+                case 2:
+                    printf("Down l\n-------------------------------------\n");
+                    break;
+                case 3:
+                    printf("Left l\n-------------------------------------\n");
+                    break;
+            }
+
+            for (i = 0; i < dim.ydim; i++) {
+                for (j = 0; j < dim.xdim; j++) {
+                    printf("%e\t", mesh[MESH_INDEX(i, j)].l[k]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+    }
+
+    if ( !strcmp(attribute, "robin") ) {
+        for (k = 0; k < 4; k++) {
+            switch (k) {
+                case 0:
+                    printf("Up Robin Conditions\n-------------------------------------\n");
+                    break;
+                case 1:
+                    printf("Right Robin Conditions\n-------------------------------------\n");
+                    break;
+                case 2:
+                    printf("Down Robin Conditions\n-------------------------------------\n");
+                    break;
+                case 3:
+                    printf("Left Robin Conditions\n-------------------------------------\n");
+                    break;
+            }
+
+            for (i = 0; i < dim.ydim; i++) {
+                for (j = 0; j < dim.xdim; j++) {
+                    printf("%e\t", mesh[MESH_INDEX(i, j)].robin[k]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+    }
 }

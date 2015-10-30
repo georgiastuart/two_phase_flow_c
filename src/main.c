@@ -6,11 +6,12 @@
 
 #define DIM 8
 #define PHYSDIM 25600
+#define CONV_CUTOFF pow(10, -5)
 
 int main(int argc, const char* argv[])
 {
     double *perm, *source, perm_strength, beta_coef;
-    cell_t *mesh, *mesh_old;
+    cell_t *mesh, *mesh_old, *temp;
 
     dim.xdim = DIM;
     dim.ydim = DIM;
@@ -32,13 +33,31 @@ int main(int argc, const char* argv[])
     free(perm);
     free(source);
 
-    print_attribute(mesh, "pressure");
+    int itr;
+    itr = 0;
+    for (;;) {
+        iteration(mesh, mesh_old);
+        print_attribute(mesh, "pressure");
+        if ( convergence_check(mesh, mesh_old, CONV_CUTOFF) ) {
+            break;
+        }
 
-    iteration(mesh, mesh_old);
+        impose_0_average(mesh);
+        update_robin(mesh);
+        print_attribute(mesh, "beta");
 
-    print_attribute(mesh, "pressure");
+        if ( itr == 1 ) {
+            break;
+        }
 
-    print_attribute(mesh, "source");
+        temp = mesh;
+        mesh = mesh_old;
+        mesh_old = temp;
+
+        itr++;
+    }
+
+
 
     return 0;
 }

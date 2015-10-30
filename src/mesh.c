@@ -82,18 +82,64 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff)
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {
             p_new = mesh[MESH_INDEX(i, j)].pressure;
-            p_old = mesh[MESH_INDEX(i, j)].pressure;
+            p_old = mesh_old[MESH_INDEX(i, j)].pressure;
             num += pow(p_new - p_old, 2);
             denom += pow(p_new, 2);
         }
     }
 
     rel_error = sqrt(num / denom);
+    printf("%e\n", rel_error);
 
     if (rel_error < conv_cutoff) {
         return 1;
     }
     else {
         return 0;
+    }
+}
+
+/* Ensures the average pressure is 0 */
+void impose_0_average(cell_t *mesh)
+{
+    int N, i, j, k;
+    double avg;
+
+    N = dim.xdim * dim.ydim;
+    avg = 0;
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
+            avg += mesh[MESH_INDEX(i, j)].pressure;
+        }
+    }
+
+    avg /= N;
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
+            mesh[MESH_INDEX(i, j)].pressure -= avg;
+
+            for (k = 0; k < 4; k++) {
+                mesh[MESH_INDEX(i, j)].l[k] -= avg;
+            }
+        }
+    }
+}
+
+/* Updates the robin conditions along the boundaries */
+void update_robin(cell_t *mesh)
+{
+    int i, j, k;
+    cell_t *cur_cell;
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
+            cur_cell = &mesh[MESH_INDEX(i, j)];
+
+            for (k = 0; k < 4; k++) {
+                cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux[k] + cur_cell->l[k];
+            }
+        }
     }
 }

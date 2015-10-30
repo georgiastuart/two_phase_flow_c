@@ -23,5 +23,8 @@ extern dim_t dim;
 
 cell_t* init_mesh(double *perm, double perm_strength, double *source, double c);
 void iteration(cell_t *mesh, cell_t *mesh_old);
+int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff);
+void impose_0_average(cell_t *mesh);
+void update_robin(cell_t *mesh);
 
 #endif /* H_MESH */
