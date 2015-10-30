@@ -7,7 +7,7 @@
 typedef struct {
     int xdim, ydim;
     double xlen, ylen;
-    const char *perm_file, *src_file;
+    char perm_file[100], src_file[100];
     double perm_scale, perm_strength, conv_cutoff, beta_coef;
 } config_t;
 

@@ -3,15 +3,29 @@
 #include <math.h>
 #include "util.h"
 #include "mesh.h"
+#include "mpi_util.h"
+#include "mpi.h"
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
     double *perm, *source;
     cell_t *mesh, *mesh_old, *temp;
     config_t config;
+    int rank, size;
+    MPI_Datatype mpi_config_t;
 
-    if (!read_config("input/config.ini", &config))
-        return 1;
+    /* Initializes MPI and creates the config datatype */
+    mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
+
+    /* Reads in config file */
+    if (rank == 0) {
+        if (!read_config("input/config.ini", &config))
+            return 1;
+    }
+
+    MPI_Bcast(&config, 1, mpi_config_t, 0, MPI_COMM_WORLD);
+
+    printf("%d\n", config.xdim);
 
     dim.xdim = config.xdim;
     dim.ydim = config.ydim;
@@ -49,9 +63,13 @@ int main(int argc, const char* argv[])
         itr++;
     }
 
-    printf("Finished after %d iterations.\n", itr + 1);
-    print_attribute(mesh, "pressure");
-    print_attribute_to_file(mesh, "pressure");
+    if (rank == 0) {
+        printf("Finished after %d iterations.\n", itr + 1);
+        print_attribute(mesh, "pressure");
+        print_attribute_to_file(mesh, "pressure");
+    }
+
+    mpi_shutdown(&mpi_config_t);
 
     return 0;
 }

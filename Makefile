@@ -8,10 +8,11 @@ src/util.o: util.c util.h mesh.h
 src/mesh.o: mesh.c mesh.h cell_functions.h
 src/cell_functions.o: cell_functions.c cell_functions.h mesh.h
 src/ini.o: ini.h ini.c
+src/mpi_util: mpi_util.h mpi_util.c util.h
 
 CC = mpicc
 CFLAGS = -Wall -pedantic
-OFILES = src/main.o src/util.o src/mesh.o src/cell_functions.o src/ini.o
+OFILES = src/main.o src/util.o src/mesh.o src/cell_functions.o src/ini.o src/mpi_util.o
 
 bin/two_phase_flow_c: $(OFILES)
 	$(CC) -o $(@) $(OFILES) -lm

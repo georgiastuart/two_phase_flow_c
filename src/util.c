@@ -24,9 +24,9 @@ static int config_helper(void *config, const char *section, const char *name,
         sscanf(strdup(value), "%lf", &d);
         pconfig->ylen = d;
     } else if (MATCH("files","perm_file")) {
-        pconfig->perm_file = strdup(value);
+        strcpy(pconfig->perm_file, strdup(value));
     } else if (MATCH("files","src_file")) {
-        pconfig->src_file = strdup(value);
+        strcpy(pconfig->src_file, strdup(value));
     } else if (MATCH("other", "perm_scale")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->perm_scale = d;
@@ -46,6 +46,7 @@ static int config_helper(void *config, const char *section, const char *name,
 
     return 1;
 }
+
 /* Reads the configuration file */
 int read_config(const char* file_name, config_t *config)
 {
