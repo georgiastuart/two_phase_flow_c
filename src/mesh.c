@@ -89,7 +89,6 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff)
     }
 
     rel_error = sqrt(num / denom);
-    printf("%e\n", rel_error);
 
     if (rel_error < conv_cutoff) {
         return 1;

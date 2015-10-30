@@ -37,18 +37,12 @@ int main(int argc, const char* argv[])
     itr = 0;
     for (;;) {
         iteration(mesh, mesh_old);
-        print_attribute(mesh, "pressure");
         if ( convergence_check(mesh, mesh_old, CONV_CUTOFF) ) {
             break;
         }
 
         impose_0_average(mesh);
         update_robin(mesh);
-        print_attribute(mesh, "beta");
-
-        if ( itr == 1 ) {
-            break;
-        }
 
         temp = mesh;
         mesh = mesh_old;
@@ -57,7 +51,8 @@ int main(int argc, const char* argv[])
         itr++;
     }
 
-
+    printf("Finished after %d iterations.\n", itr + 1);
+    print_attribute(mesh, "pressure");
 
     return 0;
 }

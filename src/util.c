@@ -37,16 +37,16 @@ void print_attribute(cell_t *mesh, char *attribute)
         for (k = 0; k < 4; k++) {
             switch (k) {
                 case 0:
-                    printf("Left Beta\n-------------------------------------\n");
+                    printf("Up Beta\n-------------------------------------\n");
                     break;
                 case 1:
                     printf("Right Beta\n-------------------------------------\n");
                     break;
                 case 2:
-                    printf("Up Beta\n-------------------------------------\n");
+                    printf("Down Beta\n-------------------------------------\n");
                     break;
                 case 3:
-                    printf("Down Beta\n-------------------------------------\n");
+                    printf("Left Beta\n-------------------------------------\n");
                     break;
             }
 
