@@ -133,7 +133,7 @@ void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y
             for (j = 0; j < xdim_per_block; j++) {
                 val = &temp[INDEX((i + y_block_loc * ydim_per_block),
                                     (j + x_block_loc * xdim_per_block), xdim)];
-                fprintf(write, "%f\n", *val);
+                fprintf(write, "%e\n", *val);
             }
         }
         fclose(write);
