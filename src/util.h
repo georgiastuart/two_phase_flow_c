@@ -14,5 +14,7 @@ typedef struct config
 
 int read_config(const char* file_name, config_t *config);
 double* read_file(const char* file_name, int ydim, int xdim);
+void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,
+                    int num_subdomains_x, int size, const char* mode);
 
 #endif /* H_UTIL */

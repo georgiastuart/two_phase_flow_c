@@ -4,6 +4,8 @@
 #include <math.h>
 #include "util.h"
 
+#define INDEX(y, x, xdim) (y * xdim + x)
+
 /* Necessary function for the config reader */
 static int config_helper(void *config, const char *section, const char *name,
                             const char *value)
@@ -24,9 +26,9 @@ static int config_helper(void *config, const char *section, const char *name,
         sscanf(strdup(value), "%lf", &d);
         pconfig->ylen = d;
     } else if (MATCH("files","perm_file")) {
-        strcpy(pconfig->perm_file, strdup(value));
+        strcpy(pconfig->perm_file, value);
     } else if (MATCH("files","src_file")) {
-        strcpy(pconfig->src_file, strdup(value));
+        strcpy(pconfig->src_file, value);
     } else if (MATCH("other", "perm_scale")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->perm_scale = d;
@@ -95,4 +97,47 @@ double* read_file(const char* file_name, int ydim, int xdim)
     fclose(fd);
 
     return data;
+}
+
+void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,
+                    int num_subdomains_x, int size, const char* mode)
+{
+    double *temp;
+    FILE *read, *write;
+    char name[100];
+    int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
+    double *val;
+
+    xdim_per_block = xdim / num_subdomains_x;
+    ydim_per_block = ydim / num_subdomains_y;
+
+    if ((read = fopen(file_name, "r")) == NULL) {
+        printf("Cannot open file %s.\n", file_name);
+        exit(1);
+    }
+
+    temp = read_file(file_name, ydim, xdim);
+
+    for (k = 0; k < size; k++) {
+        x_block_loc = k % num_subdomains_x;
+        y_block_loc = (int)(k / num_subdomains_y);
+
+        sprintf(name, "input/%s.%d", mode, k);
+
+        if ((write = fopen(name, "w")) == NULL) {
+            printf("Cannot open file %s.\n", name);
+            exit(1);
+        }
+
+        for (i = 0; i < ydim_per_block; i++) {
+            for (j = 0; j < xdim_per_block; j++) {
+                val = &temp[INDEX((i + y_block_loc * ydim_per_block),
+                                    (j + x_block_loc * xdim_per_block), xdim)];
+                fprintf(write, "%f\n", *val);
+            }
+        }
+        fclose(write);
+    }
+
+    fclose(read);
 }

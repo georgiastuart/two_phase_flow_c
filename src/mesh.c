@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mesh.h"
+#include "mpi.h"
 #include "cell_functions.h"
 
 #define PERM_COEF pow(10, -11)
@@ -43,14 +44,18 @@ void init_dim(config_t *config)
 {
     dim.xdim = config->xdim / config->num_subdomains_x;
     dim.ydim = config->ydim / config->num_subdomains_y;
+    dim.x_full_dim = config->xdim;
+    dim.y_full_dim = config->ydim;
     dim.xlen = config->xlen / config->num_subdomains_x;
     dim.ylen = config->ylen / config->num_subdomains_y;
+    dim.num_subdomains_x = config->num_subdomains_x;
+    dim.num_subdomains_y = config->num_subdomains_y;
     dim.h = dim.xlen / dim.xdim;
 }
 
 /* One iteration of the algorithm over all mesh points */
 /* 0 - up, 1 - right,  2 - down, 3 - left */
-void iteration(cell_t *mesh, cell_t *mesh_old)
+void iteration_9(cell_t *mesh, cell_t *mesh_old)
 {
     int i, j;
 
@@ -228,15 +233,52 @@ void iteration_8(cell_t *mesh, cell_t *mesh_old)
     }
 }
 
+void iteration(cell_t *mesh, cell_t *mesh_old, int block_type) {
+    switch (block_type) {
+        case 9:
+            iteration_9(mesh, mesh_old);
+            break;
+        case 0:
+            iteration_0(mesh, mesh_old);
+            break;
+        case 1:
+            iteration_1(mesh, mesh_old);
+            break;
+        case 2:
+            iteration_2(mesh, mesh_old);
+            break;
+        case 3:
+            iteration_3(mesh, mesh_old);
+            break;
+        case 4:
+            iteration_4(mesh, mesh_old);
+            break;
+        case 5:
+            iteration_5(mesh, mesh_old);
+            break;
+        case 6:
+            iteration_6(mesh, mesh_old);
+            break;
+        case 7:
+            iteration_7(mesh, mesh_old);
+            break;
+        case 8:
+            iteration_8(mesh, mesh_old);
+            break;
+    }
+}
+
 /* Checks for convergence at a specified cutoff. Returns 1 if relative error */
 /* is less than the convergence cutoff, 0 otherwise */
-int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff)
+int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int rank)
 {
     int i, j;
-    double num, denom, p_new, p_old, rel_error;
+    double num, denom, p_new, p_old, rel_error, global_num, global_denom;
 
     num = 0;
     denom = 0;
+    global_num = 0;
+    global_denom = 0;
 
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {
@@ -247,7 +289,14 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff)
         }
     }
 
-    rel_error = sqrt(num / denom);
+    MPI_Reduce(&num, &global_denom, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&denom, &global_denom, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        rel_error = sqrt(global_num / global_denom);
+    }
+
+    MPI_Bcast(&rel_error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (rel_error < conv_cutoff) {
         return 1;
