@@ -79,6 +79,155 @@ void iteration(cell_t *mesh, cell_t *mesh_old)
     }
 }
 
+/* Iteration for a type 0 block */
+void iteration_0(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    /* Update corner */
+    update_corner(mesh, mesh_old, 0, 0, 0, 3);
+
+    for (i = 1; i < dim.xdim; i++)
+        update_boundary(mesh, mesh_old, 0, i, 0);
+
+    for (i = 1; i < dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, 0, 3);
+
+    for (i = 1; i < dim.ydim; i++) {
+        for (j = 1; j < dim.xdim; j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 1 block */
+void iteration_1(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    for (i = 0; i < dim.xdim; i++)
+        update_boundary(mesh, mesh_old, 0, i, 0);
+
+    for (i = 1; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 2 block */
+void iteration_2(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    /* Update corner */
+    update_corner(mesh, mesh_old, 0, dim.xdim - 1, 0, 1);
+
+    for (i = 0; i < (dim.xdim - 1); i++)
+        update_boundary(mesh, mesh_old, 0, i, 0);
+
+    for (i = 1; i < dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+
+    for (i = 1; i < dim.ydim; i++) {
+        for (j = 0; j < (dim.xdim - 1); j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 3 block */
+void iteration_3(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    for (i = 0; i < dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, 0, 3);
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 1; j < dim.xdim; j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 4 block */
+void iteration_4(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < dim.xdim; j++) {
+            update_interior(mesh, mesh_old, i, j);
+        }
+    }
+}
+
+/* Iteration for a type 5 block */
+void iteration_5(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    for (i = 0; i < dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+
+    for (i = 0; i < dim.ydim; i++) {
+        for (j = 0; j < (dim.xdim - 1); j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 6 block */
+void iteration_6(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    /* Update corner */
+    update_corner(mesh, mesh_old, dim.ydim - 1, 0, 2, 3);
+
+    for (i = 1; i < dim.xdim; i++)
+        update_boundary(mesh, mesh_old, 0, i, 2);
+
+    for (i = 0; i < (dim.ydim - 1); i++)
+        update_boundary(mesh, mesh_old, i, 0, 3);
+
+    for (i = 0; i < (dim.ydim - 1); i++) {
+        for (j = 1; j < dim.xdim; j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 7 block */
+void iteration_7(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    for (i = 0; i < dim.xdim; i++) {
+        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+    }
+
+    for (i = 0; i < (dim.ydim - 1); i++) {
+        for (j = 0; j < dim.xdim; j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
+/* Iteration for a type 8 block */
+void iteration_8(cell_t *mesh, cell_t *mesh_old)
+{
+    int i, j;
+
+    /* Update corner */
+    update_corner(mesh, mesh_old, dim.ydim - 1, dim.xdim - 1, 2, 1);
+
+    for (i = 0; i < (dim.xdim - 1); i++)
+        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+
+    for (i = 0; i < (dim.ydim - 1); i++)
+        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+
+    for (i = 0; i < (dim.ydim - 1); i++) {
+        for (j = 0; j < (dim.xdim - 1); j++)
+            update_interior(mesh, mesh_old, i, j);
+    }
+}
+
 /* Checks for convergence at a specified cutoff. Returns 1 if relative error */
 /* is less than the convergence cutoff, 0 otherwise */
 int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff)

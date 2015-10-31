@@ -42,3 +42,50 @@ void mpi_shutdown(MPI_Datatype *mpi_config_t)
     MPI_Type_free(mpi_config_t);
     MPI_Finalize();
 }
+
+/* Sets the block type for the current processes
+    ------------------------------
+    |         |         |        |
+    |    0    |    1    |    2   |
+    |         |         |        |
+    ------------------------------
+    |         |         |        |
+    |    3    |    4    |    5   |
+    |         |         |        |
+    ------------------------------
+    |         |         |        |
+    |    6    |    7    |    8   |
+    |         |         |        |
+    ------------------------------ */
+int get_block_type(int rank, int num_subdomains_y, int num_subdomains_x)
+{
+    int x_loc, y_loc, block_type;
+
+    x_loc = rank % num_subdomains_x;
+    y_loc = (int)(rank / num_subdomains_y);
+    block_type = 4;
+
+    /* Corners */
+    if ((x_loc == 0) && (y_loc == 0)) {
+        block_type = 0;
+    } else if ((x_loc == (num_subdomains_x - 1)) && (y_loc == 0)) {
+        block_type = 2;
+    } else if ((x_loc == 0) && (y_loc == (num_subdomains_y - 1))) {
+        block_type = 6;
+    } else if ((x_loc == (num_subdomains_x - 1)) && (y_loc == (num_subdomains_y - 1))) {
+        block_type = 8;
+    }
+
+    /* Boundaries */
+    else if (y_loc == 0) {
+        block_type = 1;
+    } else if (y_loc == (num_subdomains_y - 1)) {
+        block_type = 7;
+    } else if (x_loc == 0) {
+        block_type = 3;
+    } else if (x_loc == (num_subdomains_x - 1)) {
+        block_type = 5;
+    }
+
+    return block_type;
+}
