@@ -27,15 +27,11 @@ int main(int argc, char* argv[])
 
     printf("%d\n", config.xdim);
 
-    dim.xdim = config.xdim;
-    dim.ydim = config.ydim;
-    dim.xlen = config.xlen;
-    dim.ylen = config.ylen;
-    dim.h = dim.xlen / dim.xdim;
+    init_dim(&config);
 
     /* Reads in the permeability and source fields */
-    perm = read_file(config.perm_file);
-    source = read_file(config.src_file);
+    perm = read_file(config.perm_file, dim.ydim, dim.xdim);
+    source = read_file(config.src_file, dim.ydim, dim.xdim);
 
     /* Initializes the meshes */
     mesh = init_mesh(perm, config.perm_strength, source, config.beta_coef);

@@ -11,12 +11,13 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     MPI_Comm_rank(MPI_COMM_WORLD, rank);
 
     /* Create type for config struct */
-    const int nitems = 10;
-    int blocklengths[10] = {1, 1, 1, 1, 100, 100, 1, 1, 1, 1};
-    MPI_Datatype types[10] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
+    const int nitems = 13;
+    int blocklengths[13] = {1, 1, 1, 1, 100, 100, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Datatype types[13] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_CHAR, MPI_CHAR,
-                                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
-    MPI_Aint offsets[10];
+                                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                                MPI_INT, MPI_INT, MPI_INT};
+    MPI_Aint offsets[13];
 
     offsets[0] = offsetof(config_t, xdim);
     offsets[1] = offsetof(config_t, ydim);
@@ -28,6 +29,9 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[7] = offsetof(config_t, perm_strength);
     offsets[8] = offsetof(config_t, conv_cutoff);
     offsets[9] = offsetof(config_t, beta_coef);
+    offsets[10] = offsetof(config_t, num_processes);
+    offsets[11] = offsetof(config_t, num_subdomains_x);
+    offsets[12] = offsetof(config_t, num_subdomains_y);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);
