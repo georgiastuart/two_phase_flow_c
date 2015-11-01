@@ -15,6 +15,7 @@ int main(int argc, char* argv[])
     MPI_Datatype mpi_config_t;
     receive_vectors_t rec_vec;
     send_vectors_t send_vec;
+    char perm_file[100], src_file[100];
 
     /* Initializes MPI and creates the config datatype */
     mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
@@ -35,17 +36,22 @@ int main(int argc, char* argv[])
         setup_files(config.src_file, config.ydim, config.xdim, config.num_subdomains_y,
                     config.num_subdomains_x, size, "src");
     }
-    
+
     /* Gets the type of subdomain */
     block_type = get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
 
     printf("%d, %d, %d\n", config.xdim, block_type, rank);
 
+    /* Changes perm and source file name to correct split file */
+    sprintf(perm_file, "input/perm.%d", rank);
+    sprintf(src_file, "input/src.%d", rank);
+
+    /* Initializes the global dimension struct */
     init_dim(&config);
 
     /* Reads in the permeability and source fields */
-    perm = read_file(config.perm_file, dim.ydim, dim.xdim);
-    source = read_file(config.src_file, dim.ydim, dim.xdim);
+    perm = read_file(perm_file, dim.ydim, dim.xdim);
+    source = read_file(src_file, dim.ydim, dim.xdim);
 
     /* Initializes the meshes */
     mesh = init_mesh(perm, config.perm_strength, source, config.beta_coef);
@@ -63,13 +69,10 @@ int main(int argc, char* argv[])
             break;
         }
 
-        impose_0_average(mesh);
+        impose_0_average(mesh, rank);
         update_robin(mesh);
 
-        printf("Got here\n");
         comm(mesh, &send_vec, &rec_vec, block_type, rank);
-
-        break;
 
         temp = mesh;
         mesh = mesh_old;
@@ -78,7 +81,7 @@ int main(int argc, char* argv[])
         itr++;
     }
 
-    if (rank == 0) {
+    if (rank == 1) {
         printf("Finished after %d iterations.\n", itr + 1);
         print_attribute(mesh, "pressure");
         print_attribute_to_file(mesh, "pressure");

@@ -5,6 +5,7 @@
 #include "util.h"
 
 #define INDEX(y, x, xdim) (y * xdim + x)
+#define INDEX_PAD(y, x, xdim) ((y + 1) * (xdim + 2) + (x + 1))
 
 /* Necessary function for the config reader */
 static int config_helper(void *config, const char *section, const char *name,
@@ -81,7 +82,32 @@ double* read_file(const char* file_name, int ydim, int xdim)
     double *data;
     int i, j;
 
-    data = malloc(ydim * xdim * sizeof(double));
+    data = malloc((ydim + 2) * (xdim + 2) * sizeof(double));
+
+    if ((fd = fopen(file_name, "r")) == NULL) {
+        printf("Cannot open file %s.\n", file_name);
+        exit(1);
+    }
+
+    for (i = 0; i < (ydim + 2); i++) {
+        for (j = 0; j < (xdim + 2); j++) {
+            fscanf(fd, "%lf", &data[INDEX(i, j, (xdim + 2))]);
+        }
+    }
+
+    fclose(fd);
+
+    return data;
+}
+
+/* For reading and padding the original permeability and source files */
+double* read_file_pad(const char* file_name, int ydim, int xdim)
+{
+    FILE *fd;
+    double *data;
+    int i, j;
+
+    data = malloc((ydim + 2) * (xdim + 2) * sizeof(double));
 
     if ((fd = fopen(file_name, "r")) == NULL) {
         printf("Cannot open file %s.\n", file_name);
@@ -90,7 +116,7 @@ double* read_file(const char* file_name, int ydim, int xdim)
 
     for (i = 0; i < ydim; i++) {
         for (j = 0; j < xdim; j++) {
-            fscanf(fd, "%lf", &data[i * xdim + j]);
+            fscanf(fd, "%lf", &data[INDEX_PAD(i, j, xdim)]);
         }
     }
 
@@ -116,7 +142,7 @@ void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y
         exit(1);
     }
 
-    temp = read_file(file_name, ydim, xdim);
+    temp = read_file_pad(file_name, ydim, xdim);
 
     for (k = 0; k < size; k++) {
         x_block_loc = k % num_subdomains_x;
@@ -129,10 +155,10 @@ void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y
             exit(1);
         }
 
-        for (i = 0; i < ydim_per_block; i++) {
-            for (j = 0; j < xdim_per_block; j++) {
+        for (i = 0; i < (ydim_per_block + 2); i++) {
+            for (j = 0; j < (xdim_per_block + 2); j++) {
                 val = &temp[INDEX((i + y_block_loc * ydim_per_block),
-                                    (j + x_block_loc * xdim_per_block), xdim)];
+                                    (j + x_block_loc * xdim_per_block), (xdim + 2))];
                 fprintf(write, "%e\n", *val);
             }
         }

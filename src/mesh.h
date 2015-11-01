@@ -3,6 +3,7 @@
 
 #define MESH_INDEX(y, x) ((y + 1) * (dim.xdim + 2) + (x + 1))
 #define MESH_INDEX_NO_PAD(y, x) (y * dim.xdim + x)
+#define MESH_INDEX_INC_PAD(y, x) (y * (dim.xdim + 2) + x)
 
 #include "util.h"
 #include "mpi.h"
@@ -28,7 +29,7 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c);
 void init_dim(config_t *config);
 void iteration(cell_t *mesh, cell_t *mesh_old, int block_type);
 int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int rank);
-void impose_0_average(cell_t *mesh);
+void impose_0_average(cell_t *mesh, int rank);
 void update_robin(cell_t *mesh);
 void print_attribute(cell_t *mesh, char *attribute);
 void print_attribute_to_file(cell_t *mesh, char *attribute);

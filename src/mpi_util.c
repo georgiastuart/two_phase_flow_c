@@ -4,6 +4,8 @@
 #include <math.h>
 #include "mpi_util.h"
 
+#define INDEX(y, x) (y * (dim.xdim + 2) + x)
+
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
 {
     MPI_Init(argc, argv);
@@ -111,250 +113,186 @@ void init_send_receive(send_vectors_t *send_vec, receive_vectors_t *rec_vec)
     rec_vec->receive_vec_3 = malloc(dim.ydim * sizeof(double));
 }
 
-/* Communication for type 0 block */
-void comm_0(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+/* Sends Robin conditions to the right */
+static void send_right(cell_t *mesh, send_vectors_t *send_vec, int rank)
 {
     int i;
     cell_t *cur_cell;
 
-    printf("ranks: %d, %d, %d\n", rank, rank + 1, rank + dim.num_subdomains_x);
-
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX((dim.ydim - 1), i)];
-        send_vec->send_vec_2[i] = cur_cell->robin[2];
-    }
-
     for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, (dim.xdim - 1))];
+        cur_cell = &mesh[INDEX((i + 1), dim.xdim)];
         send_vec->send_vec_1[i] = cur_cell->robin[1];
     }
 
-    /* Sends send vectors */
     MPI_Send(send_vec->send_vec_1, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_2, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD);
+}
 
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_3, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_0, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+/* Sends Robin conditions down */
+static void send_down(cell_t *mesh, send_vectors_t *send_vec, int rank)
+{
+    int i;
+    cell_t *cur_cell;
 
-    /* Fills buffer region */
     for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(dim.ydim, i)];
-        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
+        cur_cell = &mesh[INDEX(dim.ydim, (i + 1))];
+        send_vec->send_vec_2[i] = cur_cell->robin[2];
     }
+
+    MPI_Send(send_vec->send_vec_2, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x,
+            0, MPI_COMM_WORLD);
+}
+
+/* Sends Robin conditions up */
+static void send_up(cell_t *mesh, send_vectors_t *send_vec, int rank)
+{
+    int i;
+    cell_t *cur_cell;
+
+    for (i = 0; i < dim.xdim; i++) {
+        cur_cell = &mesh[INDEX(1, (i + 1))];
+        send_vec->send_vec_0[i] = cur_cell->robin[0];
+    }
+
+    MPI_Send(send_vec->send_vec_0, dim.ydim, MPI_DOUBLE, rank - dim.num_subdomains_x,
+        0, MPI_COMM_WORLD);
+}
+
+/* Sends Robin conditions left */
+static void send_left(cell_t *mesh, send_vectors_t *send_vec, int rank)
+{
+    int i;
+    cell_t *cur_cell;
 
     for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, dim.xdim)];
+        cur_cell = &mesh[INDEX((i + 1), 1)];
+        send_vec->send_vec_3[i] = cur_cell->robin[3];
+    }
+
+    MPI_Send(send_vec->send_vec_3, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
+}
+
+/* Receive Robin conditions from right */
+static void rec_right(cell_t *mesh, receive_vectors_t *rec_vec, int rank)
+{
+    cell_t *cur_cell;
+    int i;
+
+    MPI_Recv(rec_vec->receive_vec_3, dim.ydim, MPI_DOUBLE, rank + 1, 0,
+        MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (i = 0; i < dim.ydim; i++) {
+        cur_cell = &mesh[INDEX((i + 1), (dim.xdim + 1))];
         cur_cell->robin[3] = rec_vec->receive_vec_3[i];
     }
+}
+
+/* Receive Robin conditions from left */
+static void rec_left(cell_t *mesh, receive_vectors_t *rec_vec, int rank)
+{
+    cell_t *cur_cell;
+    int i;
+
+    MPI_Recv(rec_vec->receive_vec_1, dim.ydim, MPI_DOUBLE, rank - 1, 0,
+        MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (i = 0; i < dim.ydim; i++) {
+        cur_cell = &mesh[INDEX((i + 1), 0)];
+        cur_cell->robin[1] = rec_vec->receive_vec_1[i];
+    }
+}
+
+/* Receive Robin conditions from down */
+static void rec_down(cell_t *mesh, receive_vectors_t *rec_vec, int rank)
+{
+    cell_t *cur_cell;
+    int i;
+
+    MPI_Recv(rec_vec->receive_vec_0, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x,
+        0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (i = 0; i < dim.xdim; i++) {
+        cur_cell = &mesh[INDEX((dim.ydim + 1), (i + 1))];
+        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
+    }
+}
+
+/* Receive Robin conditions from down */
+static void rec_up(cell_t *mesh, receive_vectors_t *rec_vec, int rank)
+{
+    cell_t *cur_cell;
+    int i;
+
+    MPI_Recv(rec_vec->receive_vec_2, dim.xdim, MPI_DOUBLE, rank - dim.num_subdomains_x,
+        0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (i = 0; i < dim.xdim; i++) {
+        cur_cell = &mesh[INDEX(0, (i + 1))];
+        cur_cell->robin[2] = rec_vec->receive_vec_2[i];
+    }
+}
+
+/* Communication for type 0 block */
+void comm_0(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+{
+    send_right(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
+
+    rec_right(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
 }
 
 /* Communication for type 1 block */
 void comm_1(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
-    int i;
-    cell_t *cur_cell;
+    send_left(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
 
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX((dim.ydim - 1), i)];
-        send_vec->send_vec_2[i] = cur_cell->robin[2];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, (dim.xdim - 1))];
-        send_vec->send_vec_1[i] = cur_cell->robin[1];
-
-        cur_cell = &mesh[MESH_INDEX(i, 0)];
-        send_vec->send_vec_3[i] = cur_cell->robin[3];
-    }
-
-    /* Sends send vectors */
-    MPI_Send(send_vec->send_vec_1, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_2, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_3, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_3, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_0, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_1, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    /* Fills buffer region */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(dim.ydim, i)];
-        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, dim.xdim)];
-        cur_cell->robin[3] = rec_vec->receive_vec_3[i];
-
-        cur_cell = &mesh[MESH_INDEX(i, -1)];
-        cur_cell->robin[1] = rec_vec->receive_vec_1[i];
-    }
+    rec_left(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
 }
 
 /* Communication for type 2 block */
 void comm_2(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
-    int i;
-    cell_t *cur_cell;
+    send_left(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
 
-    printf("ranks: %d, %d, %d\n", rank, rank - 1, rank + dim.num_subdomains_x);
-
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX((dim.ydim - 1), i)];
-        send_vec->send_vec_2[i] = cur_cell->robin[2];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, (dim.xdim - 1))];
-        send_vec->send_vec_3[i] = cur_cell->robin[3];
-    }
-
-    /* Sends send vectors */
-    MPI_Send(send_vec->send_vec_3, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_2, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_1, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_0, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    /* Fills buffer region */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(dim.ydim, i)];
-        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, -1)];
-        cur_cell->robin[1] = rec_vec->receive_vec_1[i];
-    }
+    rec_left(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
 }
 
 /* Communication for type 3 block */
 void comm_3(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
-    int i;
-    cell_t *cur_cell;
+    send_right(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
 
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX((dim.ydim - 1), i)];
-        send_vec->send_vec_2[i] = cur_cell->robin[2];
-
-        cur_cell = &mesh[MESH_INDEX(0, i)];
-        send_vec->send_vec_0[i] = cur_cell->robin[0];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, (dim.xdim - 1))];
-        send_vec->send_vec_1[i] = cur_cell->robin[1];
-    }
-
-    /* Sends send vectors */
-    MPI_Send(send_vec->send_vec_1, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_2, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_0, dim.ydim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_3, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_0, dim.xdim, MPI_DOUBLE, rank + dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_2, dim.ydim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    /* Fills buffer region */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(dim.ydim, i)];
-        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
-
-        cur_cell = &mesh[MESH_INDEX(-1, i)];
-        cur_cell->robin[2] = rec_vec->receive_vec_2[i];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, dim.xdim)];
-        cur_cell->robin[3] = rec_vec->receive_vec_3[i];
-    }
+    rec_right(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
 }
 
 /* Communication for type 6 block */
 void comm_6(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
-    int i;
-    cell_t *cur_cell;
+    send_right(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank);
 
-    printf("ranks: %d, %d, %d\n", rank, rank + 1, rank - dim.num_subdomains_x);
-
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(0, i)];
-        send_vec->send_vec_0[i] = cur_cell->robin[0];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, (dim.xdim - 1))];
-        send_vec->send_vec_1[i] = cur_cell->robin[1];
-    }
-
-    /* Sends send vectors */
-    MPI_Send(send_vec->send_vec_1, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_0, dim.ydim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_3, dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_2, dim.ydim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    /* Fills buffer region */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(-1, i)];
-        cur_cell->robin[2] = rec_vec->receive_vec_2[i];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, dim.xdim)];
-        cur_cell->robin[3] = rec_vec->receive_vec_3[i];
-    }
+    rec_right(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank);
 }
 
 /* Communication for type 8 block */
 void comm_8(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
-    int i;
-    cell_t *cur_cell;
+    send_left(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank);
 
-    printf("ranks: %d, %d, %d\n", rank, rank - 1, rank - dim.num_subdomains_x);
-
-    /* Fills send vectors */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(0, i)];
-        send_vec->send_vec_0[i] = cur_cell->robin[0];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, 0)];
-        send_vec->send_vec_3[i] = cur_cell->robin[3];
-    }
-
-    /* Sends send vectors */
-    MPI_Send(send_vec->send_vec_3, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
-    MPI_Send(send_vec->send_vec_0, dim.xdim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD);
-
-    /* Receives rec vectors */
-    MPI_Recv(rec_vec->receive_vec_1, dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(rec_vec->receive_vec_2, dim.xdim, MPI_DOUBLE, rank - dim.num_subdomains_x, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    /* Fills buffer region */
-    for (i = 0; i < dim.xdim; i++) {
-        cur_cell = &mesh[MESH_INDEX(-1, i)];
-        cur_cell->robin[2] = rec_vec->receive_vec_2[i];
-    }
-
-    for (i = 0; i < dim.ydim; i++) {
-        cur_cell = &mesh[MESH_INDEX(i, -1)];
-        cur_cell->robin[1] = rec_vec->receive_vec_1[i];
-    }
+    rec_left(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank);
 }
 
 /* Communication controller */

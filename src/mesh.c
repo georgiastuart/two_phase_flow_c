@@ -20,11 +20,11 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
     mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
 
     /* Sets cell permeability and sources */
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            cur_cell = &mesh[MESH_INDEX(i, j)];
-            cur_cell->perm = PERM_COEF * exp(perm_strength * perm[MESH_INDEX_NO_PAD(i, j)]);
-            cur_cell->source = source[MESH_INDEX_NO_PAD(i, j)];
+    for (i = 0; i < (dim.ydim + 2); i++) {
+        for (j = 0; j < (dim.xdim + 2); j++) {
+            cur_cell = &mesh[MESH_INDEX_INC_PAD(i, j)];
+            cur_cell->perm = PERM_COEF * exp(perm_strength * perm[MESH_INDEX_INC_PAD(i, j)]);
+            cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
         }
     }
 
@@ -187,7 +187,7 @@ void iteration_6(cell_t *mesh, cell_t *mesh_old)
     update_corner(mesh, mesh_old, dim.ydim - 1, 0, 2, 3);
 
     for (i = 1; i < dim.xdim; i++)
-        update_boundary(mesh, mesh_old, 0, i, 2);
+        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
 
     for (i = 0; i < (dim.ydim - 1); i++)
         update_boundary(mesh, mesh_old, i, 0, 3);
@@ -277,8 +277,6 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int ra
 
     num = 0;
     denom = 0;
-    global_num = 0;
-    global_denom = 0;
 
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {
@@ -289,10 +287,11 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int ra
         }
     }
 
-    MPI_Reduce(&num, &global_denom, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&num, &global_num, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&denom, &global_denom, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
+        printf("Global: %e, %e\n", global_num, global_denom);
         rel_error = sqrt(global_num / global_denom);
     }
 
@@ -307,21 +306,32 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int ra
 }
 
 /* Ensures the average pressure is 0 */
-void impose_0_average(cell_t *mesh)
+void impose_0_average(cell_t *mesh, int rank)
 {
     int N, i, j, k;
-    double avg;
+    double sum, global_sum, avg;
 
-    N = dim.xdim * dim.ydim;
-    avg = 0;
+    N = dim.x_full_dim * dim.y_full_dim;
+    sum = 0;
+    global_sum = 0;
 
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {
-            avg += mesh[MESH_INDEX(i, j)].pressure;
+            sum += mesh[MESH_INDEX(i, j)].pressure;
         }
     }
 
-    avg /= N;
+    printf("Rank: %d, Sum: %e\n", rank, sum);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Reduce(&sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Global Sum: %e\n", global_sum);
+        avg = global_sum / N;
+    }
+
+    MPI_Bcast(&avg, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     for (i = 0; i < dim.ydim; i++) {
         for (j = 0; j < dim.xdim; j++) {

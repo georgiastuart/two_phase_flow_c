@@ -34,11 +34,15 @@ void compute_beta(cell_t *mesh, int cur_y, int cur_x, double beta_coef)
         adj_cell = &mesh[get_adjacent_index(k, cur_y, cur_x)];
         if (adj_cell->perm == 0) {
             cur_cell->beta[k] = 0;
-        }
-        else {
+        } else {
             perm_eff = 2 * adj_cell->perm * cur_cell->perm;
             perm_eff /= (adj_cell->perm + cur_cell->perm);
             cur_cell->beta[k] = beta_coef * dim.h / perm_eff;
+        }
+
+        /* temp fix for weird inf bug */
+        if ((cur_cell->beta[k] == INFINITY) || (cur_cell->beta[k] == NAN)) {
+            cur_cell->beta[k] = 0;
         }
     }
 }
