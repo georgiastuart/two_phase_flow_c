@@ -1,7 +1,6 @@
 #ifndef H_MPI_UTIL
 #define H_MPI_UTIL
 
-#include "mpi.h"
 #include "util.h"
 #include "mesh.h"
 
@@ -17,8 +16,8 @@ typedef struct receive_vectors
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t);
 void mpi_shutdown(MPI_Datatype *mpi_config_t);
-void init_send_receive(send_vectors_t *send_vec, receive_vectors_t *rec_vec);
-void comm(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+void init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
+void comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
             int block_type, int rank);
 int get_block_type(int rank, int num_subdomains_y, int num_subdomains_x);
 

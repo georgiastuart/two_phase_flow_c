@@ -11,26 +11,30 @@
 dim_t dim;
 
 /* Sets up the mesh with cell structs at each gridpoint */
-cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
+mesh_t* init_mesh(dim_t dim, double *perm, double perm_strength, double *source, double c)
 {
     int i, j;
-    cell_t *mesh, *cur_cell;
+    mesh_t *mesh;
+    cell_t *cur_cell;
 
     /* Allocates memory for the mesh */
-    mesh = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
+    mesh = malloc(sizeof(mesh_t));
+    mesh->cell = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
+
+    mesh->dim = dim;
 
     /* Sets cell permeability and sources */
-    for (i = 0; i < (dim.ydim + 2); i++) {
-        for (j = 0; j < (dim.xdim + 2); j++) {
-            cur_cell = &mesh[MESH_INDEX_INC_PAD(i, j)];
+    for (i = 0; i < (mesh->dim.ydim + 2); i++) {
+        for (j = 0; j < (mesh->dim.xdim + 2); j++) {
+            cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
             cur_cell->perm = PERM_COEF * exp(perm_strength * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
         }
     }
 
     /* Computes beta and A at all mesh points */
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
             compute_beta(mesh, i, j, c);
             compute_A(mesh, i, j);
         }
@@ -39,201 +43,187 @@ cell_t* init_mesh(double *perm, double perm_strength, double *source, double c)
     return mesh;
 }
 
-/* Initializes the dimensions from the config file */
-void init_dim(config_t *config)
-{
-    dim.xdim = config->xdim / config->num_subdomains_x;
-    dim.ydim = config->ydim / config->num_subdomains_y;
-    dim.x_full_dim = config->xdim;
-    dim.y_full_dim = config->ydim;
-    dim.xlen = config->xlen / config->num_subdomains_x;
-    dim.ylen = config->ylen / config->num_subdomains_y;
-    dim.num_subdomains_x = config->num_subdomains_x;
-    dim.num_subdomains_y = config->num_subdomains_y;
-    dim.h = dim.xlen / dim.xdim;
-}
-
 /* One iteration of the algorithm over all mesh points */
 /* 0 - up, 1 - right,  2 - down, 3 - left */
-void iteration_9(cell_t *mesh, cell_t *mesh_old)
+void iteration_9(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
     /* Updates the corners */
     update_corner(mesh, mesh_old, 0, 0, 0, 3);
-    update_corner(mesh, mesh_old, 0, dim.xdim - 1, 0, 1);
-    update_corner(mesh, mesh_old, dim.ydim - 1, 0, 2, 3);
-    update_corner(mesh, mesh_old, dim.ydim - 1, dim.xdim - 1, 2, 1);
+    update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
+    update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
+    update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
 
     /* Updates the boundaries */
-    for (i = 1; i < (dim.ydim - 1); i++) {
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
         update_boundary(mesh, mesh_old, i, 0, 3);
-        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+        update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
     }
 
-    for (i = 1; i < (dim.xdim - 1); i++) {
+    for (i = 1; i < (mesh->dim.xdim - 1); i++) {
         update_boundary(mesh, mesh_old, 0, i, 0);
-        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+        update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
     }
 
     /* Updates the interior cells */
-    for (i = 1; i < (dim.ydim - 1); i++) {
-        for (j = 1; j < (dim.xdim - 1); j++) {
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 1; j < (mesh->dim.xdim - 1); j++) {
             update_interior(mesh, mesh_old, i, j);
         }
     }
 }
 
 /* Iteration for a type 0 block */
-void iteration_0(cell_t *mesh, cell_t *mesh_old)
+void iteration_0(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
     /* Update corner */
     update_corner(mesh, mesh_old, 0, 0, 0, 3);
 
-    for (i = 1; i < dim.xdim; i++)
+    for (i = 1; i < mesh->dim.xdim; i++)
         update_boundary(mesh, mesh_old, 0, i, 0);
 
-    for (i = 1; i < dim.ydim; i++)
+    for (i = 1; i < mesh->dim.ydim; i++)
         update_boundary(mesh, mesh_old, i, 0, 3);
 
-    for (i = 1; i < dim.ydim; i++) {
-        for (j = 1; j < dim.xdim; j++)
+    for (i = 1; i < mesh->dim.ydim; i++) {
+        for (j = 1; j < mesh->dim.xdim; j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 1 block */
-void iteration_1(cell_t *mesh, cell_t *mesh_old)
+void iteration_1(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
-    for (i = 0; i < dim.xdim; i++)
+    for (i = 0; i < mesh->dim.xdim; i++)
         update_boundary(mesh, mesh_old, 0, i, 0);
 
-    for (i = 1; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++)
+    for (i = 1; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 2 block */
-void iteration_2(cell_t *mesh, cell_t *mesh_old)
+void iteration_2(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
     /* Update corner */
-    update_corner(mesh, mesh_old, 0, dim.xdim - 1, 0, 1);
+    update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
 
-    for (i = 0; i < (dim.xdim - 1); i++)
+    for (i = 0; i < (mesh->dim.xdim - 1); i++)
         update_boundary(mesh, mesh_old, 0, i, 0);
 
-    for (i = 1; i < dim.ydim; i++)
-        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+    for (i = 1; i < mesh->dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
-    for (i = 1; i < dim.ydim; i++) {
-        for (j = 0; j < (dim.xdim - 1); j++)
+    for (i = 1; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < (mesh->dim.xdim - 1); j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 3 block */
-void iteration_3(cell_t *mesh, cell_t *mesh_old)
+void iteration_3(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
-    for (i = 0; i < dim.ydim; i++)
+    for (i = 0; i < mesh->dim.ydim; i++)
         update_boundary(mesh, mesh_old, i, 0, 3);
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 1; j < dim.xdim; j++)
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 1; j < mesh->dim.xdim; j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 4 block */
-void iteration_4(cell_t *mesh, cell_t *mesh_old)
+void iteration_4(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
             update_interior(mesh, mesh_old, i, j);
         }
     }
 }
 
 /* Iteration for a type 5 block */
-void iteration_5(cell_t *mesh, cell_t *mesh_old)
+void iteration_5(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
-    for (i = 0; i < dim.ydim; i++)
-        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+    for (i = 0; i < mesh->dim.ydim; i++)
+        update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < (dim.xdim - 1); j++)
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < (mesh->dim.xdim - 1); j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 6 block */
-void iteration_6(cell_t *mesh, cell_t *mesh_old)
+void iteration_6(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
     /* Update corner */
-    update_corner(mesh, mesh_old, dim.ydim - 1, 0, 2, 3);
+    update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
 
-    for (i = 1; i < dim.xdim; i++)
-        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+    for (i = 1; i < mesh->dim.xdim; i++)
+        update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
 
-    for (i = 0; i < (dim.ydim - 1); i++)
+    for (i = 0; i < (mesh->dim.ydim - 1); i++)
         update_boundary(mesh, mesh_old, i, 0, 3);
 
-    for (i = 0; i < (dim.ydim - 1); i++) {
-        for (j = 1; j < dim.xdim; j++)
+    for (i = 0; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 1; j < mesh->dim.xdim; j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 7 block */
-void iteration_7(cell_t *mesh, cell_t *mesh_old)
+void iteration_7(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
-    for (i = 0; i < dim.xdim; i++) {
-        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+    for (i = 0; i < mesh->dim.xdim; i++) {
+        update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
     }
 
-    for (i = 0; i < (dim.ydim - 1); i++) {
-        for (j = 0; j < dim.xdim; j++)
+    for (i = 0; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 0; j < mesh->dim.xdim; j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
 /* Iteration for a type 8 block */
-void iteration_8(cell_t *mesh, cell_t *mesh_old)
+void iteration_8(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
 
     /* Update corner */
-    update_corner(mesh, mesh_old, dim.ydim - 1, dim.xdim - 1, 2, 1);
+    update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
 
-    for (i = 0; i < (dim.xdim - 1); i++)
-        update_boundary(mesh, mesh_old, dim.ydim - 1, i, 2);
+    for (i = 0; i < (mesh->dim.xdim - 1); i++)
+        update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
 
-    for (i = 0; i < (dim.ydim - 1); i++)
-        update_boundary(mesh, mesh_old, i, dim.xdim - 1, 1);
+    for (i = 0; i < (mesh->dim.ydim - 1); i++)
+        update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
-    for (i = 0; i < (dim.ydim - 1); i++) {
-        for (j = 0; j < (dim.xdim - 1); j++)
+    for (i = 0; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 0; j < (mesh->dim.xdim - 1); j++)
             update_interior(mesh, mesh_old, i, j);
     }
 }
 
-void iteration(cell_t *mesh, cell_t *mesh_old, int block_type) {
+void iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type) {
     switch (block_type) {
         case 9:
             iteration_9(mesh, mesh_old);
@@ -270,7 +260,7 @@ void iteration(cell_t *mesh, cell_t *mesh_old, int block_type) {
 
 /* Checks for convergence at a specified cutoff. Returns 1 if relative error */
 /* is less than the convergence cutoff, 0 otherwise */
-int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int rank)
+int convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
 {
     int i, j;
     double num, denom, p_new, p_old, rel_error, global_num, global_denom;
@@ -278,10 +268,10 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int ra
     num = 0;
     denom = 0;
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            p_new = mesh[MESH_INDEX(i, j)].pressure;
-            p_old = mesh_old[MESH_INDEX(i, j)].pressure;
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            p_new = mesh->cell[MESH_INDEX(i, j)].pressure;
+            p_old = mesh_old->cell[MESH_INDEX(i, j)].pressure;
             num += pow(p_new - p_old, 2);
             denom += pow(p_new, 2);
         }
@@ -306,18 +296,18 @@ int convergence_check(cell_t *mesh, cell_t *mesh_old, double conv_cutoff, int ra
 }
 
 /* Ensures the average pressure is 0 */
-void impose_0_average(cell_t *mesh, int rank)
+void impose_0_average(mesh_t *mesh, int rank)
 {
     int N, i, j, k;
     double sum, global_sum, avg;
 
-    N = dim.x_full_dim * dim.y_full_dim;
+    N = mesh->dim.x_full_dim * mesh->dim.y_full_dim;
     sum = 0;
     global_sum = 0;
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            sum += mesh[MESH_INDEX(i, j)].pressure;
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            sum += mesh->cell[MESH_INDEX(i, j)].pressure;
         }
     }
 
@@ -333,26 +323,26 @@ void impose_0_average(cell_t *mesh, int rank)
 
     MPI_Bcast(&avg, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            mesh[MESH_INDEX(i, j)].pressure -= avg;
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            mesh->cell[MESH_INDEX(i, j)].pressure -= avg;
 
             for (k = 0; k < 4; k++) {
-                mesh[MESH_INDEX(i, j)].l[k] -= avg;
+                mesh->cell[MESH_INDEX(i, j)].l[k] -= avg;
             }
         }
     }
 }
 
 /* Updates the robin conditions along the boundaries */
-void update_robin(cell_t *mesh)
+void update_robin(mesh_t *mesh)
 {
     int i, j, k;
     cell_t *cur_cell;
 
-    for (i = 0; i < dim.ydim; i++) {
-        for (j = 0; j < dim.xdim; j++) {
-            cur_cell = &mesh[MESH_INDEX(i, j)];
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
 
             for (k = 0; k < 4; k++) {
                 cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux[k] + cur_cell->l[k];
@@ -362,7 +352,7 @@ void update_robin(cell_t *mesh)
 }
 
 /* Prints out the specified attribute to the terminal */
-void print_attribute(cell_t *mesh, char *attribute)
+void print_attribute(mesh_t *mesh, char *attribute)
 {
     int i, j, k;
     if ( !strcmp(attribute, "beta") ) {
@@ -382,9 +372,9 @@ void print_attribute(cell_t *mesh, char *attribute)
                     break;
             }
 
-            for (i = 0; i < dim.ydim; i++) {
-                for (j = 0; j < dim.xdim; j++) {
-                    printf("%e\t", mesh[MESH_INDEX(i, j)].beta[k]);
+            for (i = 0; i < mesh->dim.ydim; i++) {
+                for (j = 0; j < mesh->dim.xdim; j++) {
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].beta[k]);
                 }
                 printf("\n");
             }
@@ -394,9 +384,9 @@ void print_attribute(cell_t *mesh, char *attribute)
 
     if ( !strcmp(attribute, "perm") ) {
         printf("PERMEABILITY\n------------------------------------------------\n");
-        for (i = 0; i < dim.ydim; i++) {
-            for (j = 0; j < dim.xdim; j++) {
-                printf("%e\t", mesh[MESH_INDEX(i, j)].perm);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].perm);
             }
             printf("\n");
         }
@@ -405,9 +395,9 @@ void print_attribute(cell_t *mesh, char *attribute)
 
     if ( !strcmp(attribute, "pressure") ) {
         printf("PRESSURE\n----------------------------------------------------\n");
-        for (i = 0; i < dim.ydim; i++) {
-            for (j = 0; j < dim.xdim; j++) {
-                printf("%e\t", mesh[MESH_INDEX(i, j)].pressure);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].pressure);
             }
             printf("\n");
         }
@@ -415,9 +405,9 @@ void print_attribute(cell_t *mesh, char *attribute)
 
     if ( !strcmp(attribute, "source") ) {
         printf("SOURCE\n-------------------------------------------------------\n");
-        for (i = 0; i < dim.ydim; i++) {
-            for (j = 0; j < dim.xdim; j++) {
-                printf("%e\t", mesh[MESH_INDEX(i, j)].source);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].source);
             }
             printf("\n");
         }
@@ -440,9 +430,9 @@ void print_attribute(cell_t *mesh, char *attribute)
                     break;
             }
 
-            for (i = 0; i < dim.ydim; i++) {
-                for (j = 0; j < dim.xdim; j++) {
-                    printf("%e\t", mesh[MESH_INDEX(i, j)].flux[k]);
+            for (i = 0; i < mesh->dim.ydim; i++) {
+                for (j = 0; j < mesh->dim.xdim; j++) {
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].flux[k]);
                 }
                 printf("\n");
             }
@@ -467,9 +457,9 @@ void print_attribute(cell_t *mesh, char *attribute)
                     break;
             }
 
-            for (i = 0; i < dim.ydim; i++) {
-                for (j = 0; j < dim.xdim; j++) {
-                    printf("%e\t", mesh[MESH_INDEX(i, j)].l[k]);
+            for (i = 0; i < mesh->dim.ydim; i++) {
+                for (j = 0; j < mesh->dim.xdim; j++) {
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].l[k]);
                 }
                 printf("\n");
             }
@@ -494,9 +484,9 @@ void print_attribute(cell_t *mesh, char *attribute)
                     break;
             }
 
-            for (i = 0; i < dim.ydim; i++) {
-                for (j = 0; j < dim.xdim; j++) {
-                    printf("%e\t", mesh[MESH_INDEX(i, j)].robin[k]);
+            for (i = 0; i < mesh->dim.ydim; i++) {
+                for (j = 0; j < mesh->dim.xdim; j++) {
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].robin[k]);
                 }
                 printf("\n");
             }
@@ -506,7 +496,7 @@ void print_attribute(cell_t *mesh, char *attribute)
 }
 
 /* Prints specified attribute to a file named "attribute".dat */
-void print_attribute_to_file(cell_t *mesh, char *attribute)
+void print_attribute_to_file(mesh_t *mesh, char *attribute)
 {
     int i, j;
     FILE *fd;
@@ -520,13 +510,13 @@ void print_attribute_to_file(cell_t *mesh, char *attribute)
     }
 
     if (!strcmp(attribute, "pressure")) {
-        for (i = 0; i < dim.ydim; i++) {
-            for (j = 0; j < dim.xdim; j++) {
-                if (j == (dim.xdim - 1)) {
-                    fprintf(fd, "%e\n", mesh[MESH_INDEX(i, j)].pressure);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                if (j == (mesh->dim.xdim - 1)) {
+                    fprintf(fd, "%e\n", mesh->cell[MESH_INDEX(i, j)].pressure);
                 }
                 else {
-                    fprintf(fd, "%e,", mesh[MESH_INDEX(i, j)].pressure);
+                    fprintf(fd, "%e,", mesh->cell[MESH_INDEX(i, j)].pressure);
                 }
             }
         }

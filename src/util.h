@@ -2,6 +2,13 @@
 #define H_UTIL
 
 #include "ini.h"
+#include "mpi.h"
+
+typedef struct dim
+{
+    int xdim, ydim, num_subdomains_x, num_subdomains_y, x_full_dim, y_full_dim;
+    double h, xlen, ylen;
+} dim_t;
 
 typedef struct config
 {
@@ -12,6 +19,7 @@ typedef struct config
     int num_processes, num_subdomains_x, num_subdomains_y;
 } config_t;
 
+void init_dim(config_t *config, dim_t *dim);
 int read_config(const char* file_name, config_t *config);
 double* read_file(const char* file_name, int ydim, int xdim);
 void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,

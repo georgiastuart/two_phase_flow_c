@@ -7,6 +7,20 @@
 #define INDEX(y, x, xdim) (y * xdim + x)
 #define INDEX_PAD(y, x, xdim) ((y + 1) * (xdim + 2) + (x + 1))
 
+/* Initializes the dimensions from the config file */
+void init_dim(config_t *config, dim_t *dim)
+{
+    dim->xdim = config->xdim / config->num_subdomains_x;
+    dim->ydim = config->ydim / config->num_subdomains_y;
+    dim->x_full_dim = config->xdim;
+    dim->y_full_dim = config->ydim;
+    dim->xlen = config->xlen / config->num_subdomains_x;
+    dim->ylen = config->ylen / config->num_subdomains_y;
+    dim->num_subdomains_x = config->num_subdomains_x;
+    dim->num_subdomains_y = config->num_subdomains_y;
+    dim->h = dim->xlen / dim->xdim;
+}
+
 /* Necessary function for the config reader */
 static int config_helper(void *config, const char *section, const char *name,
                             const char *value)
