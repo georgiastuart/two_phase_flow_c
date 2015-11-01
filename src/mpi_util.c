@@ -5,6 +5,7 @@
 #include "mpi_util.h"
 
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
+#define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
 {
@@ -39,11 +40,45 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     MPI_Type_commit(mpi_config_t);
 }
 
-void mpi_setup_perm(config_t *config, int size, int is_master, double *perm)
+/* For transmitting permeability and source information to the different processes */
+void mpi_setup_parameters(config_t *config, int size, int is_master, double **out_param)
 {
+    int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
+    int transmit_len;
+    double *transmit, *full_param;
+
+    xdim_per_block = config->xdim / config->num_subdomains_x;
+    ydim_per_block = config->ydim / config->num_subdomains_y;
+
+    transmit_len = (xdim_per_block + 2) * (ydim_per_block + 2);
+
+    /* Allocate memory for transmit vector and parameter vector */
+    transmit = malloc(transmit_len * sizeof(double));
+    *out_param = malloc(transmit_len * sizeof(double));
+    full_param = malloc((config->xdim + 2) * (config->ydim + 2) * sizeof(double));
+
     if (is_master) {
-        read_file_pad(config->perm_file, config->ydim, config->xdim);
+        full_param = read_file_pad(config->perm_file, config->ydim, config->xdim);
+
+        for (k = 0; k < size; k++) {
+            x_block_loc = k % config->num_subdomains_x;
+            y_block_loc = (int)(k / config->num_subdomains_y);
+
+            for (i = 0; i < (ydim_per_block + 2); i++) {
+                for (j = 0; j < (xdim_per_block + 2); j++) {
+                    transmit[INDEX_NO_MESH(i, j, xdim_per_block + 2)] =
+                                full_param[INDEX_NO_MESH((i + y_block_loc * ydim_per_block),
+                                (j + x_block_loc * xdim_per_block), (config->xdim + 2))];
+                }
+            }
+
+            MPI_Send(transmit, transmit_len, MPI_DOUBLE, k, 0, MPI_COMM_WORLD);
+        }
     }
+
+    MPI_Recv(*out_param, transmit_len, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    free(transmit);
+    free(full_param);
 }
 
 void mpi_shutdown(MPI_Datatype *mpi_config_t)

@@ -16,6 +16,7 @@ typedef struct receive_vectors
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t);
 void mpi_shutdown(MPI_Datatype *mpi_config_t);
+void mpi_setup_parameters(config_t *config, int size, int is_master, double **param);
 void mpi_init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
 void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
             int block_type, int rank);

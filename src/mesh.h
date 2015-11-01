@@ -22,5 +22,6 @@ void mesh_impose_0_average(mesh_t *mesh, int rank);
 void mesh_update_robin(mesh_t *mesh);
 void print_attribute(mesh_t *mesh, char *attribute);
 void print_attribute_to_file(mesh_t *mesh, char *attribute);
+double* read_file_pad(const char* file_name, int ydim, int xdim);
 
 #endif /* H_MESH */

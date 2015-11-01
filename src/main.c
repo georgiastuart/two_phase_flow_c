@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
     send_vectors_t send_vec;
     char perm_file[100], src_file[100];
     double t1, t2;
+    int i, j;
 
     /* Initializes MPI and creates the config datatype */
     mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
@@ -33,14 +34,21 @@ int main(int argc, char* argv[])
             return 1;
 
         /* Sets up files for perm and source */
-        setup_files(config.perm_file, config.ydim, config.xdim, config.num_subdomains_y,
-                    config.num_subdomains_x, size, "perm");
         setup_files(config.src_file, config.ydim, config.xdim, config.num_subdomains_y,
                         config.num_subdomains_x, size, "src");
     }
 
     /* Broadcasts config file */
     MPI_Bcast(&config, 1, mpi_config_t, 0, MPI_COMM_WORLD);
+
+    mpi_setup_parameters(&config, size, is_master, &perm);
+
+    for (i = 0; i < (config.ydim + 2); i++) {
+        for (j = 0; j < (config.xdim + 2); j++) {
+            printf("%e\t", perm[i * (config.xdim + 2) + j]);
+        }
+        printf("\n");
+    }
 
     /* Gets the type of subdomain */
     block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
@@ -53,7 +61,7 @@ int main(int argc, char* argv[])
     init_dim(&config, &dim);
 
     /* Reads in the permeability and source fields */
-    perm = read_file(perm_file, dim.ydim, dim.xdim);
+    /*perm = read_file(perm_file, dim.ydim, dim.xdim);*/
     source = read_file(src_file, dim.ydim, dim.xdim);
 
     /* Initializes the meshes */
@@ -96,7 +104,7 @@ int main(int argc, char* argv[])
         itr++;
     }
 
-    if (rank == 12) {
+    if (rank == 0) {
         t1 = MPI_Wtime();
         printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr + 1);
         /*print_attribute(mesh, "pressure");*/
