@@ -28,23 +28,19 @@ int main(int argc, char* argv[])
         printf("Setting up MPI and mesh...\n");
         t1 = MPI_Wtime();
 
-    /* Reads in config file */
+        /* Reads in config file */
         if (!read_config("input/config.ini", &config))
             return 1;
+
+        /* Sets up files for perm and source */
+        setup_files(config.perm_file, config.ydim, config.xdim, config.num_subdomains_y,
+                    config.num_subdomains_x, size, "perm");
+        setup_files(config.src_file, config.ydim, config.xdim, config.num_subdomains_y,
+                        config.num_subdomains_x, size, "src");
     }
 
     /* Broadcasts config file */
     MPI_Bcast(&config, 1, mpi_config_t, 0, MPI_COMM_WORLD);
-
-    /* Sets up files for perm and source */
-    if (is_master) {
-        setup_files(config.perm_file, config.ydim, config.xdim, config.num_subdomains_y,
-                    config.num_subdomains_x, size, "perm");
-        setup_files(config.src_file, config.ydim, config.xdim, config.num_subdomains_y,
-                    config.num_subdomains_x, size, "src");
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
 
     /* Gets the type of subdomain */
     block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
