@@ -6,12 +6,9 @@
 #include "mpi.h"
 #include "cell_functions.h"
 
-#define PERM_COEF pow(10, -11)
-
-dim_t dim;
-
 /* Sets up the mesh with cell structs at each gridpoint */
-mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_strength, double *source, double c)
+mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_strength,
+                        double *source, double c)
 {
     int i, j;
     mesh_t *mesh;
@@ -27,7 +24,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_strength, double *so
     for (i = 0; i < (mesh->dim.ydim + 2); i++) {
         for (j = 0; j < (mesh->dim.xdim + 2); j++) {
             cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
-            cur_cell->perm = PERM_COEF * exp(perm_strength * perm[MESH_INDEX_INC_PAD(i, j)]);
+            cur_cell->perm = pow(10, -11) * exp(perm_strength * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
         }
     }
@@ -345,178 +342,4 @@ void mesh_update_robin(mesh_t *mesh)
             }
         }
     }
-}
-
-/* Prints out the specified attribute to the terminal */
-void print_attribute(mesh_t *mesh, char *attribute)
-{
-    int i, j, k;
-    if ( !strcmp(attribute, "beta") ) {
-        for (k = 0; k < 4; k++) {
-            switch (k) {
-                case 0:
-                    printf("Up Beta\n-------------------------------------\n");
-                    break;
-                case 1:
-                    printf("Right Beta\n-------------------------------------\n");
-                    break;
-                case 2:
-                    printf("Down Beta\n-------------------------------------\n");
-                    break;
-                case 3:
-                    printf("Left Beta\n-------------------------------------\n");
-                    break;
-            }
-
-            for (i = 0; i < mesh->dim.ydim; i++) {
-                for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].beta[k]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
-
-    if ( !strcmp(attribute, "perm") ) {
-        printf("PERMEABILITY\n------------------------------------------------\n");
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].perm);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-
-    if ( !strcmp(attribute, "pressure") ) {
-        printf("PRESSURE\n----------------------------------------------------\n");
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].pressure);
-            }
-            printf("\n");
-        }
-    }
-
-    if ( !strcmp(attribute, "source") ) {
-        printf("SOURCE\n-------------------------------------------------------\n");
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].source);
-            }
-            printf("\n");
-        }
-    }
-
-    if ( !strcmp(attribute, "flux") ) {
-        for (k = 0; k < 4; k++) {
-            switch (k) {
-                case 0:
-                    printf("Up Flux\n-------------------------------------\n");
-                    break;
-                case 1:
-                    printf("Right Flux\n-------------------------------------\n");
-                    break;
-                case 2:
-                    printf("Down Flux\n-------------------------------------\n");
-                    break;
-                case 3:
-                    printf("Left Flux\n-------------------------------------\n");
-                    break;
-            }
-
-            for (i = 0; i < mesh->dim.ydim; i++) {
-                for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].flux[k]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
-
-    if ( !strcmp(attribute, "l") ) {
-        for (k = 0; k < 4; k++) {
-            switch (k) {
-                case 0:
-                    printf("Up l\n-------------------------------------\n");
-                    break;
-                case 1:
-                    printf("Right l\n-------------------------------------\n");
-                    break;
-                case 2:
-                    printf("Down l\n-------------------------------------\n");
-                    break;
-                case 3:
-                    printf("Left l\n-------------------------------------\n");
-                    break;
-            }
-
-            for (i = 0; i < mesh->dim.ydim; i++) {
-                for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].l[k]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
-
-    if ( !strcmp(attribute, "robin") ) {
-        for (k = 0; k < 4; k++) {
-            switch (k) {
-                case 0:
-                    printf("Up Robin Conditions\n-------------------------------------\n");
-                    break;
-                case 1:
-                    printf("Right Robin Conditions\n-------------------------------------\n");
-                    break;
-                case 2:
-                    printf("Down Robin Conditions\n-------------------------------------\n");
-                    break;
-                case 3:
-                    printf("Left Robin Conditions\n-------------------------------------\n");
-                    break;
-            }
-
-            for (i = 0; i < mesh->dim.ydim; i++) {
-                for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].robin[k]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
-}
-
-/* Prints specified attribute to a file named "attribute".dat */
-void print_attribute_to_file(mesh_t *mesh, char *attribute)
-{
-    int i, j;
-    FILE *fd;
-    char name[100];
-
-    sprintf(name, "output/%s.dat", attribute);
-
-    if ((fd = fopen(name, "w")) == NULL) {
-        fprintf(stderr, "Unable to open file %s\n", name);
-        return;
-    }
-
-    if (!strcmp(attribute, "pressure")) {
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                if (j == (mesh->dim.xdim - 1)) {
-                    fprintf(fd, "%e\n", mesh->cell[MESH_INDEX(i, j)].pressure);
-                }
-                else {
-                    fprintf(fd, "%e,", mesh->cell[MESH_INDEX(i, j)].pressure);
-                }
-            }
-        }
-    }
-
-    fclose(fd);
 }

@@ -4,6 +4,9 @@
 #include "ini.h"
 #include "mpi.h"
 
+struct mesh;
+typedef struct mesh mesh_t;
+
 typedef struct dim
 {
     int xdim, ydim, num_subdomains_x, num_subdomains_y, x_full_dim, y_full_dim;
