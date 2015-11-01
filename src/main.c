@@ -32,37 +32,20 @@ int main(int argc, char* argv[])
         /* Reads in config file */
         if (!read_config("input/config.ini", &config))
             return 1;
-
-        /* Sets up files for perm and source */
-        setup_files(config.src_file, config.ydim, config.xdim, config.num_subdomains_y,
-                        config.num_subdomains_x, size, "src");
     }
 
     /* Broadcasts config file */
     MPI_Bcast(&config, 1, mpi_config_t, 0, MPI_COMM_WORLD);
 
-    mpi_setup_parameters(&config, size, is_master, &perm);
-
-    for (i = 0; i < (config.ydim + 2); i++) {
-        for (j = 0; j < (config.xdim + 2); j++) {
-            printf("%e\t", perm[i * (config.xdim + 2) + j]);
-        }
-        printf("\n");
-    }
+    /* Sets up the permeability and source parameters and sends to processes */
+    mpi_setup_parameters(&config, 0, size, is_master, &perm);
+    mpi_setup_parameters(&config, 1, size, is_master, &source);
 
     /* Gets the type of subdomain */
     block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
 
-    /* Changes perm and source file name to correct split file */
-    sprintf(perm_file, "input/perm.%d", rank);
-    sprintf(src_file, "input/src.%d", rank);
-
     /* Initializes the global dimension struct */
     init_dim(&config, &dim);
-
-    /* Reads in the permeability and source fields */
-    /*perm = read_file(perm_file, dim.ydim, dim.xdim);*/
-    source = read_file(src_file, dim.ydim, dim.xdim);
 
     /* Initializes the meshes */
     mesh = mesh_init_mesh(dim, perm, config.perm_scale, config.perm_strength,

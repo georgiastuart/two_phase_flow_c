@@ -41,7 +41,8 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
 }
 
 /* For transmitting permeability and source information to the different processes */
-void mpi_setup_parameters(config_t *config, int size, int is_master, double **out_param)
+/* Mode is 0 for permeability, 1 for source */
+void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, double **out_param)
 {
     int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
     int transmit_len;
@@ -58,7 +59,14 @@ void mpi_setup_parameters(config_t *config, int size, int is_master, double **ou
     full_param = malloc((config->xdim + 2) * (config->ydim + 2) * sizeof(double));
 
     if (is_master) {
-        full_param = read_file_pad(config->perm_file, config->ydim, config->xdim);
+        if (mode == 0) {
+            full_param = read_file_pad(config->perm_file, config->ydim, config->xdim);
+        } else if (mode == 1) {
+            full_param = read_file_pad(config->src_file, config->ydim, config->xdim);
+        } else {
+            printf("Invalid Mode\n");
+            exit(1);
+        }
 
         for (k = 0; k < size; k++) {
             x_block_loc = k % config->num_subdomains_x;
