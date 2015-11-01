@@ -23,6 +23,12 @@ typedef struct cell
     double flux[4], l[4], beta[4], robin[4], A[4];
 } cell_t;
 
+typedef struct mesh
+{
+    cell_t *cell;
+    dim_t dim;
+} mesh_t;
+
 extern dim_t dim;
 
 cell_t* init_mesh(double *perm, double perm_strength, double *source, double c);

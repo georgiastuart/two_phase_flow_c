@@ -275,6 +275,32 @@ void comm_3(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
     rec_down(mesh, rec_vec, rank);
 }
 
+/* Communication for type 4 block */
+void comm_4(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+{
+    send_right(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank);
+
+    rec_right(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank);
+}
+
+/* Communication for type 5 block */
+void comm_5(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+{
+    send_up(mesh, send_vec, rank);
+    send_down(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank);
+
+    rec_up(mesh, rec_vec, rank);
+    rec_down(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank);
+}
+
 /* Communication for type 6 block */
 void comm_6(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
@@ -283,6 +309,18 @@ void comm_6(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 
     rec_right(mesh, rec_vec, rank);
     rec_up(mesh, rec_vec, rank);
+}
+
+/* Communication for type 7 block */
+void comm_7(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+{
+    send_right(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank);
+
+    rec_right(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank);
 }
 
 /* Communication for type 8 block */
@@ -316,4 +354,11 @@ void comm(cell_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
             comm_8(mesh, send_vec, rec_vec, rank);
             break;
     }
+}
+
+/* Recombines Pressure Output */
+void recombine_pressure(cell_t *mesh, int rank)
+{
+    int i, j;
+    cell_t *cur_cell;
 }
