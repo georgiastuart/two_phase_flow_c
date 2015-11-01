@@ -37,9 +37,7 @@ int main(int argc, char* argv[])
     }
 
     /* Gets the type of subdomain */
-    block_type = get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
-
-    printf("%d, %d, %d\n", config.xdim, block_type, rank);
+    block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
 
     /* Changes perm and source file name to correct split file */
     sprintf(perm_file, "input/perm.%d", rank);
@@ -53,11 +51,11 @@ int main(int argc, char* argv[])
     source = read_file(src_file, dim.ydim, dim.xdim);
 
     /* Initializes the meshes */
-    mesh = init_mesh(dim, perm, config.perm_strength, source, config.beta_coef);
-    mesh_old = init_mesh(dim, perm, config.perm_strength, source, config.beta_coef);
+    mesh = mesh_init_mesh(dim, perm, config.perm_strength, source, config.beta_coef);
+    mesh_old = mesh_init_mesh(dim, perm, config.perm_strength, source, config.beta_coef);
 
     /* Initializes send and receive structs for MPI */
-    init_send_receive(mesh, &send_vec, &rec_vec);
+    mpi_init_send_receive(mesh, &send_vec, &rec_vec);
 
     /* Frees memory used from the read-in permeability and source fields */
     free(perm);
@@ -66,16 +64,16 @@ int main(int argc, char* argv[])
     int itr;
     itr = 0;
     for (;;) {
-        iteration(mesh, mesh_old, block_type);
-        if ( convergence_check(mesh, mesh_old, config.conv_cutoff, rank) ) {
+        mesh_iteration(mesh, mesh_old, block_type);
+        if ( mesh_convergence_check(mesh, mesh_old, config.conv_cutoff, rank) ) {
             break;
         }
 
-        impose_0_average(mesh, rank);
+        mesh_impose_0_average(mesh, rank);
 
-        update_robin(mesh);
+        mesh_update_robin(mesh);
 
-        comm(mesh, &send_vec, &rec_vec, block_type, rank);
+       mpi_comm(mesh, &send_vec, &rec_vec, block_type, rank);
 
         temp = mesh;
         mesh = mesh_old;

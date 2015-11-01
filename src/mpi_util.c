@@ -59,7 +59,7 @@ void mpi_shutdown(MPI_Datatype *mpi_config_t)
     |    6    |    7    |    8   |
     |         |         |        |
     ------------------------------ */
-int get_block_type(int rank, int num_subdomains_y, int num_subdomains_x)
+int mpi_get_block_type(int rank, int num_subdomains_y, int num_subdomains_x)
 {
     int x_loc, y_loc, block_type;
 
@@ -99,7 +99,7 @@ int get_block_type(int rank, int num_subdomains_y, int num_subdomains_x)
 }
 
 /* Initializes the send the receive vectors */
-void init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
+void mpi_init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
     /* Allocates memory for send and receive vectors */
     send_vec->send_vec_0 = malloc(mesh->dim.xdim * sizeof(double));
@@ -232,7 +232,7 @@ static void rec_up(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
 }
 
 /* Communication for type 0 block */
-void comm_0(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_0(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_right(mesh, send_vec, rank);
     send_down(mesh, send_vec, rank);
@@ -242,7 +242,7 @@ void comm_0(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 1 block */
-void comm_1(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_1(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_left(mesh, send_vec, rank);
     send_right(mesh, send_vec, rank);
@@ -254,7 +254,7 @@ void comm_1(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 2 block */
-void comm_2(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_2(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_left(mesh, send_vec, rank);
     send_down(mesh, send_vec, rank);
@@ -264,7 +264,7 @@ void comm_2(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 3 block */
-void comm_3(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_3(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_right(mesh, send_vec, rank);
     send_up(mesh, send_vec, rank);
@@ -276,7 +276,7 @@ void comm_3(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 4 block */
-void comm_4(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_4(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_right(mesh, send_vec, rank);
     send_up(mesh, send_vec, rank);
@@ -290,7 +290,7 @@ void comm_4(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 5 block */
-void comm_5(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_5(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_up(mesh, send_vec, rank);
     send_down(mesh, send_vec, rank);
@@ -302,7 +302,7 @@ void comm_5(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 6 block */
-void comm_6(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_6(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_right(mesh, send_vec, rank);
     send_up(mesh, send_vec, rank);
@@ -312,7 +312,7 @@ void comm_6(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 7 block */
-void comm_7(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_7(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_right(mesh, send_vec, rank);
     send_up(mesh, send_vec, rank);
@@ -324,7 +324,7 @@ void comm_7(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication for type 8 block */
-void comm_8(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_8(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
 {
     send_left(mesh, send_vec, rank);
     send_up(mesh, send_vec, rank);
@@ -334,7 +334,7 @@ void comm_8(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, 
 }
 
 /* Communication controller */
-void comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
             int block_type, int rank)
 {
     switch (block_type) {
@@ -347,8 +347,20 @@ void comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
         case 2:
             comm_2(mesh, send_vec, rec_vec, rank);
             break;
+        case 3:
+            comm_3(mesh, send_vec, rec_vec, rank);
+            break;
+        case 4:
+            comm_4(mesh, send_vec, rec_vec, rank);
+            break;
+        case 5:
+            comm_5(mesh, send_vec, rec_vec, rank);
+            break;
         case 6:
             comm_6(mesh, send_vec, rec_vec, rank);
+            break;
+        case 7:
+            comm_7(mesh, send_vec, rec_vec, rank);
             break;
         case 8:
             comm_8(mesh, send_vec, rec_vec, rank);
@@ -357,7 +369,7 @@ void comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
 }
 
 /* Recombines Pressure Output */
-void recombine_pressure(mesh_t *mesh, int rank)
+void mpi_recombine_pressure(mesh_t *mesh, int rank)
 {
     int i, j;
     cell_t *cur_cell;

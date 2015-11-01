@@ -11,7 +11,7 @@ src/ini.o: util.h ini.h ini.c
 src/mpi_util: mpi_util.h mpi_util.c util.h mesh.h
 
 CC = mpicc
-CFLAGS = -Wall -pedantic -g
+CFLAGS = -Wall -g
 OFILES = src/main.o src/util.o src/mesh.o src/cell_functions.o src/ini.o src/mpi_util.o
 
 bin/two_phase_flow_c: $(OFILES)
