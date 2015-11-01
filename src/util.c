@@ -181,6 +181,7 @@ void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y
     }
 
     fclose(read);
+    free(temp);
 }
 
 /* Prints out the specified attribute to the terminal */

@@ -39,6 +39,13 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     MPI_Type_commit(mpi_config_t);
 }
 
+void mpi_setup_perm(config_t *config, int size, int is_master, double *perm)
+{
+    if (is_master) {
+        read_file_pad(config->perm_file, config->ydim, config->xdim);
+    }
+}
+
 void mpi_shutdown(MPI_Datatype *mpi_config_t)
 {
     MPI_Type_free(mpi_config_t);
