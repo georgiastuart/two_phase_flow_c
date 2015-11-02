@@ -343,3 +343,19 @@ void mesh_update_robin(mesh_t *mesh)
         }
     }
 }
+
+/* Computes the velocity information on the mesh */
+void mesh_compute_velocity(mesh_t *mesh)
+{
+    int i, j;
+    cell_t *cur_cell;
+
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+
+            cur_cell->velocity_y = (cur_cell->flux[0] - cur_cell->flux[2]) / 2;
+            cur_cell->velocity_x = (cur_cell->flux[1] - cur_cell->flux[3]) / 2;
+        }
+    }
+}

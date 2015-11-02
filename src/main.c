@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[])
 {
-    double *perm, *source, *pressure;
+    double *perm, *source;
     mesh_t *mesh, *mesh_old, *temp;
     dim_t dim;
     config_t config;
@@ -17,9 +17,7 @@ int main(int argc, char* argv[])
     MPI_Datatype mpi_config_t;
     receive_vectors_t rec_vec;
     send_vectors_t send_vec;
-    char perm_file[100], src_file[100];
     double t1, t2;
-    int i, j;
 
     /* Initializes MPI and creates the config datatype */
     mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
@@ -96,7 +94,14 @@ int main(int argc, char* argv[])
         /*print_attribute_to_file(mesh, "pressure");*/
     }
 
-    write_data(mesh, &config, size, rank);
+    /* Computes velocity */
+    mesh_compute_velocity(mesh);
+
+    /* Writes out data to binaries */
+    write_data(mesh, &config, size, rank, "pressure");
+    write_data(mesh, &config, size, rank, "velocity_y");
+    write_data(mesh, &config, size, rank, "velocity_x");
+
 
     /* Shuts down MPI and frees memory */
     mpi_shutdown(&mpi_config_t);

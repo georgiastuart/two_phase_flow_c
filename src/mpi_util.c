@@ -37,8 +37,8 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[11] = offsetof(config_t, num_subdomains_x);
     offsets[12] = offsetof(config_t, num_subdomains_y);
     offsets[13] = offsetof(config_t, pressure_out);
-    offsets[14] = offsetof(config_t, vel_out_y);
-    offsets[15] = offsetof(config_t, vel_out_x);
+    offsets[14] = offsetof(config_t, velocity_y_out);
+    offsets[15] = offsetof(config_t, velocity_x_out);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);
@@ -422,24 +422,46 @@ void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec
     }
 }
 
-void write_data(mesh_t *mesh, config_t *config, int size, int rank)
+void write_data(mesh_t *mesh, config_t *config, int size, int rank, const char *mode)
 {
     int gsizes[NDIMS], distribs[NDIMS], dargs[NDIMS], psizes[NDIMS], file_type_size;
     MPI_Datatype file_type;
     MPI_Aint file_type_extent;
     MPI_File fh;
     int write_buffer_size;
-    double *pressure, *write_buffer;
+    double *write_buffer;
     int i, j, file_open_error, file_write_error;
     MPI_Status status;
+    char name[100];
 
-    /* Allocates memory and transfers pressure to array */
-    pressure  = malloc(mesh->dim.xdim * mesh->dim.ydim * sizeof(double));
+    /* Allocates memory for write buffer */
+    write_buffer  = malloc(mesh->dim.xdim * mesh->dim.ydim * sizeof(double));
 
-    for (i = 0; i < mesh->dim.ydim; i++) {
-        for (j = 0; j < mesh->dim.xdim; j++) {
-            pressure[MESH_INDEX_NO_PAD(i, j)] = mesh->cell[MESH_INDEX(i, j)].pressure;
+    /* Transfers data from mesh to write buffer */
+    if (!strcmp(mode, "pressure")) {
+        strcpy(name, config->pressure_out);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                write_buffer[MESH_INDEX_NO_PAD(i, j)] = mesh->cell[MESH_INDEX(i, j)].pressure;
+            }
         }
+    } else if (!strcmp(mode, "velocity_y")) {
+        strcpy(name, config->velocity_y_out);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                write_buffer[MESH_INDEX_NO_PAD(i, j)] = mesh->cell[MESH_INDEX(i, j)].velocity_y;
+            }
+        }
+    } else if (!strcmp(mode, "velocity_x")) {
+        strcpy(name, config->velocity_x_out);
+        for (i = 0; i < mesh->dim.ydim; i++) {
+            for (j = 0; j < mesh->dim.xdim; j++) {
+                write_buffer[MESH_INDEX_NO_PAD(i, j)] = mesh->cell[MESH_INDEX(i, j)].velocity_x;
+            }
+        }
+    } else {
+        printf("Invalid print mode\n");
+        exit(1);
     }
 
     /* Sets up MPI darray */
@@ -463,32 +485,45 @@ void write_data(mesh_t *mesh, config_t *config, int size, int rank)
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    file_open_error = MPI_File_open(MPI_COMM_WORLD, config->pressure_out,
+    /* Deletes old file */
+    MPI_File_delete(name, MPI_INFO_NULL);
+
+    /* Opens write out file */
+    file_open_error = MPI_File_open(MPI_COMM_WORLD, name,
 				    MPI_MODE_CREATE | MPI_MODE_WRONLY,
 				    MPI_INFO_NULL, &fh);
 
     if (file_open_error != MPI_SUCCESS) {
         printf("Rank %d failed to open file", rank);
         MPI_Abort(MPI_COMM_WORLD, file_open_error);
-    } else {
-        MPI_Barrier(MPI_COMM_WORLD);
-
-        MPI_File_set_view(fh, 0, MPI_DOUBLE, file_type, "native", MPI_INFO_NULL);
-
-        file_write_error = MPI_File_write_all(fh, pressure, write_buffer_size,
-                            MPI_DOUBLE, &status);
-
-        if (file_write_error != MPI_SUCCESS) {
-            printf("Rank %d file write error\n", rank);
-
-            MPI_File_close(&fh);
-	        free(pressure);
-	        if (rank == 0)
-                MPI_File_delete(config->pressure_out, MPI_INFO_NULL);
-        } else {
-            printf("Rank %d Finished writing\n", rank);
-        }
+        exit(1);
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    /* Sets file view */
+    MPI_File_set_view(fh, 0, MPI_DOUBLE, file_type, "native", MPI_INFO_NULL);
+
+    /* Writes file out */
+    file_write_error = MPI_File_write_all(fh, write_buffer, write_buffer_size,
+                        MPI_DOUBLE, &status);
+
+    if (file_write_error != MPI_SUCCESS) {
+        printf("Rank %d file write error\n", rank);
+
+        MPI_File_close(&fh);
+        free(write_buffer);
+        if (rank == 0)
+            MPI_File_delete(name, MPI_INFO_NULL);
+        exit(1);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Finished writing %s file\n", mode);
+    }
+
     MPI_File_close(&fh);
-    free(pressure);
+    free(write_buffer);
 }

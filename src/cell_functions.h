@@ -13,6 +13,9 @@ typedef struct cell
 
     /* Values that live along the edges */
     double flux[4], l[4], beta[4], robin[4], A[4];
+
+    /* Final velocity data */
+    double velocity_y, velocity_x;
 } cell_t;
 
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);

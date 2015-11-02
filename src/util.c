@@ -65,10 +65,10 @@ static int config_helper(void *config, const char *section, const char *name,
         pconfig->num_subdomains_y = atoi(value);
     } else if (MATCH("out_files", "pressure_out")) {
         strcpy(pconfig->pressure_out, value);
-    } else if (MATCH("out_files", "vel_out_y")) {
-        strcpy(pconfig->vel_out_y, value);
-    } else if (MATCH("out_files", "vel_out_x")) {
-        strcpy(pconfig->vel_out_x, value);
+    } else if (MATCH("out_files", "velocity_y_out")) {
+        strcpy(pconfig->velocity_y_out, value);
+    } else if (MATCH("out_files", "velocity_x_out")) {
+        strcpy(pconfig->velocity_x_out, value);
     } else {
         /* Unknown Section or Name */
         return 0;
