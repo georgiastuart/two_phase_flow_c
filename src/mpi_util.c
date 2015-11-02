@@ -6,6 +6,7 @@
 
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
 #define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)
+#define NDIMS 2
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
 {
@@ -14,13 +15,13 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     MPI_Comm_rank(MPI_COMM_WORLD, rank);
 
     /* Create type for config struct */
-    const int nitems = 13;
-    int blocklengths[13] = {1, 1, 1, 1, 100, 100, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Datatype types[13] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
+    const int nitems = 16;
+    int blocklengths[16] = {1, 1, 1, 1, 100, 100, 1, 1, 1, 1, 1, 1, 1, 100, 100, 100};
+    MPI_Datatype types[16] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                MPI_INT, MPI_INT, MPI_INT};
-    MPI_Aint offsets[13];
+                                MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_CHAR, MPI_CHAR};
+    MPI_Aint offsets[16];
 
     offsets[0] = offsetof(config_t, xdim);
     offsets[1] = offsetof(config_t, ydim);
@@ -35,6 +36,9 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[10] = offsetof(config_t, num_processes);
     offsets[11] = offsetof(config_t, num_subdomains_x);
     offsets[12] = offsetof(config_t, num_subdomains_y);
+    offsets[13] = offsetof(config_t, pressure_out);
+    offsets[14] = offsetof(config_t, vel_out_y);
+    offsets[15] = offsetof(config_t, vel_out_x);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);
@@ -418,9 +422,73 @@ void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec
     }
 }
 
-/* Recombines Pressure Output */
-void mpi_recombine_pressure(mesh_t *mesh, int rank)
+void write_data(mesh_t *mesh, config_t *config, int size, int rank)
 {
-    int i, j;
-    cell_t *cur_cell;
+    int gsizes[NDIMS], distribs[NDIMS], dargs[NDIMS], psizes[NDIMS], file_type_size;
+    MPI_Datatype file_type;
+    MPI_Aint file_type_extent;
+    MPI_File fh;
+    int write_buffer_size;
+    double *pressure, *write_buffer;
+    int i, j, file_open_error, file_write_error;
+    MPI_Status status;
+
+    /* Allocates memory and transfers pressure to array */
+    pressure  = malloc(mesh->dim.xdim * mesh->dim.ydim * sizeof(double));
+
+    for (i = 0; i < mesh->dim.ydim; i++) {
+        for (j = 0; j < mesh->dim.xdim; j++) {
+            pressure[MESH_INDEX_NO_PAD(i, j)] = mesh->cell[MESH_INDEX(i, j)].pressure;
+        }
+    }
+
+    /* Sets up MPI darray */
+    gsizes[0] = config->ydim;
+    gsizes[1] = config->xdim;
+    distribs[0] = MPI_DISTRIBUTE_BLOCK;
+    distribs[1] = MPI_DISTRIBUTE_BLOCK;
+    dargs[0] = MPI_DISTRIBUTE_DFLT_DARG;
+    dargs[1] = MPI_DISTRIBUTE_DFLT_DARG;
+    psizes[0] = config->num_subdomains_y;
+    psizes[1] = config->num_subdomains_x;
+
+    MPI_Type_create_darray(size, rank, NDIMS, gsizes, distribs, dargs, psizes,
+        MPI_ORDER_C, MPI_DOUBLE, &file_type);
+    MPI_Type_commit(&file_type);
+
+    MPI_Type_extent(file_type, &file_type_extent);
+    MPI_Type_size(file_type, &file_type_size);
+
+    write_buffer_size = mesh->dim.xdim * mesh->dim.ydim;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    file_open_error = MPI_File_open(MPI_COMM_WORLD, config->pressure_out,
+				    MPI_MODE_CREATE | MPI_MODE_WRONLY,
+				    MPI_INFO_NULL, &fh);
+
+    if (file_open_error != MPI_SUCCESS) {
+        printf("Rank %d failed to open file", rank);
+        MPI_Abort(MPI_COMM_WORLD, file_open_error);
+    } else {
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        MPI_File_set_view(fh, 0, MPI_DOUBLE, file_type, "native", MPI_INFO_NULL);
+
+        file_write_error = MPI_File_write_all(fh, pressure, write_buffer_size,
+                            MPI_DOUBLE, &status);
+
+        if (file_write_error != MPI_SUCCESS) {
+            printf("Rank %d file write error\n", rank);
+
+            MPI_File_close(&fh);
+	        free(pressure);
+	        if (rank == 0)
+                MPI_File_delete(config->pressure_out, MPI_INFO_NULL);
+        } else {
+            printf("Rank %d Finished writing\n", rank);
+        }
+    }
+    MPI_File_close(&fh);
+    free(pressure);
 }
