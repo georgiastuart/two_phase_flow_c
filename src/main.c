@@ -5,9 +5,11 @@
 #include "mesh.h"
 #include "mpi_util.h"
 
+#define NDIMS 2
+
 int main(int argc, char* argv[])
 {
-    double *perm, *source;
+    double *perm, *source, *pressure;
     mesh_t *mesh, *mesh_old, *temp;
     dim_t dim;
     config_t config;
@@ -87,14 +89,19 @@ int main(int argc, char* argv[])
         itr++;
     }
 
-    if (rank == 0) {
+    if (is_master) {
         t1 = MPI_Wtime();
         printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr + 1);
         /*print_attribute(mesh, "pressure");*/
-        print_attribute_to_file(mesh, "pressure");
+        /*print_attribute_to_file(mesh, "pressure");*/
     }
 
+    write_data(mesh, &config, size, rank);
+
+    /* Shuts down MPI and frees memory */
     mpi_shutdown(&mpi_config_t);
+    free(mesh);
+    free(mesh_old);
 
     return 0;
 }

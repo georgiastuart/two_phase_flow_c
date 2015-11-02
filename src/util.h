@@ -17,7 +17,7 @@ typedef struct config
 {
     int xdim, ydim;
     double xlen, ylen;
-    char perm_file[100], src_file[100];
+    char perm_file[100], src_file[100], pressure_out[100], vel_out_y[100], vel_out_x[100];
     double perm_scale, perm_strength, conv_cutoff, beta_coef;
     int num_processes, num_subdomains_x, num_subdomains_y;
 } config_t;

@@ -21,6 +21,7 @@ void mpi_init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vecto
 void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
             int block_type, int rank);
 int mpi_get_block_type(int rank, int num_subdomains_y, int num_subdomains_x);
+void write_data(mesh_t *mesh, config_t *config, int size, int rank);
 
 
 #endif  /* H_MPI_UTIL */
