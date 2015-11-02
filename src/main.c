@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
         printf("Running iterations...\n");
     }
 
+    /* Iteration of the pressure problem */
     int itr;
     itr = 0;
     for (;;) {
@@ -90,8 +91,6 @@ int main(int argc, char* argv[])
     if (is_master) {
         t1 = MPI_Wtime();
         printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr + 1);
-        /*print_attribute(mesh, "pressure");*/
-        /*print_attribute_to_file(mesh, "pressure");*/
     }
 
     /* Computes velocity */
