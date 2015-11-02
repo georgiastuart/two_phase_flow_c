@@ -87,14 +87,17 @@ int main(int argc, char* argv[])
         itr++;
     }
 
-    if (rank == 0) {
+    if (is_master) {
         t1 = MPI_Wtime();
         printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr + 1);
         /*print_attribute(mesh, "pressure");*/
         print_attribute_to_file(mesh, "pressure");
     }
 
+    /* Shuts down MPI and frees memory */
     mpi_shutdown(&mpi_config_t);
+    free(mesh);
+    free(mesh_old);
 
     return 0;
 }
