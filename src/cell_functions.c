@@ -34,10 +34,20 @@ int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
 /* Computes diffusion at the current cell */
 void cell_d_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
 {
+    double total_mob, w_mob, o_mob, pc_deriv;
+    cell_t *cur_cell;
 
+    cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+    total_mob = total_mobility(cur_cell, &mesh->global);
+    w_mob = phase_mobility_w(cur_cell, &mesh->global);
+    o_mob = phase_mobility_o(cur_cell, &mesh->global);
+    pc_deriv = cap_pressure_deriv(cur_cell, &mesh->global);
+
+    cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
 }
 
-/* Computes beta at the current cell */
+/* Computes beta at the current cell for pressure problem */
 void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
     int k;

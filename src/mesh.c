@@ -17,6 +17,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     mesh = malloc(sizeof(mesh_t));
     mesh->cell = malloc((dim.ydim + 2) * (dim.xdim + 2) * sizeof(cell_t));
 
+    /* Sets the mesh dimensions */
     mesh->dim = dim;
 
     /* Sets global parameters */
@@ -25,6 +26,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     mesh->global.sat_rel_w = config->sat_rel_w;
     mesh->global.visc_o = config->visc_o;
     mesh->global.visc_w = config->visc_w;
+    mesh->global.eta = config->eta;
 
     /* Sets cell permeability and sources */
     for (i = 0; i < (mesh->dim.ydim + 2); i++) {

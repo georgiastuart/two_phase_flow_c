@@ -2,7 +2,7 @@
 #define H_CELL_FUNCTIONS
 
 #include "util.h"
-#include "diffusion_functions.h"
+#include "diffusion_helpers.h"
 
 struct mesh;
 typedef struct mesh mesh_t;
@@ -10,7 +10,7 @@ typedef struct mesh mesh_t;
 typedef struct cell
 {
     /* Values that live at the center of each cell */
-    double perm, pressure, source, saturation, saturation_prev;
+    double perm, pressure, source, saturation, saturation_prev, diffusion;
 
     /* Values that live along the edges */
     double flux[4], l[4], beta_p[4], robin[4], A_p[4], beta_d[4], A_d[4];

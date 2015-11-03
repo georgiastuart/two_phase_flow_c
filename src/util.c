@@ -72,6 +72,9 @@ static int config_helper(void *config, const char *section, const char *name,
     } else if (MATCH("other", "visc_w")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->visc_w = d;
+    } else if (MATCH("other", "eta")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->eta = d;
     } else if (MATCH("mpi", "num_processes")) {
         pconfig->num_processes = atoi(value);
     } else if (MATCH("mpi", "num_subdomains_x")) {

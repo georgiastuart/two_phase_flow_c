@@ -10,7 +10,7 @@
 
 typedef struct global_mesh_params
 {
-    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w;
+    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w, eta;
 } global_mesh_params_t;
 
 typedef struct mesh
