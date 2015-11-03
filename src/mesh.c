@@ -369,3 +369,30 @@ void mesh_compute_velocity(mesh_t *mesh)
         }
     }
 }
+
+int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
+    int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
+{
+    int itr = 0;
+    mesh_t *temp;
+
+    for (;;) {
+        itr++;
+
+        mesh_update(mesh, mesh_old, block_type, &cell_p_ops);
+
+        if (mesh_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
+            break;
+        }
+
+        mesh_impose_0_average(mesh, rank);
+        mesh_p_update_robin(mesh);
+        mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
+
+        temp = mesh;
+        mesh = mesh_old;
+        mesh_old = temp;
+    }
+
+    return itr;
+}

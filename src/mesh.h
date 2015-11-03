@@ -7,6 +7,7 @@
 
 #include "util.h"
 #include "cell_functions.h"
+#include "mpi_util.h"
 
 typedef struct global_mesh_params
 {
@@ -29,5 +30,7 @@ void print_attribute(mesh_t *mesh, char *attribute);
 void print_attribute_to_file(mesh_t *mesh, char *attribute);
 double* read_file_pad(const char* file_name, int ydim, int xdim);
 void mesh_compute_velocity(mesh_t *mesh);
+int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
+        int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
 
 #endif /* H_MESH */

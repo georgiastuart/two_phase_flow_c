@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mpi_util.h"
+#include "mesh.h"
 
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
 #define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)

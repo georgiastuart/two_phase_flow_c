@@ -66,30 +66,13 @@ int main(int argc, char* argv[])
     }
 
     /* Iteration of the pressure problem */
-    int itr;
-    itr = 0;
-    for (;;) {
-        mesh_update(mesh, mesh_old, block_type, &cell_p_ops);
-        if ( mesh_convergence_check(mesh, mesh_old, config.conv_cutoff, rank) ) {
-            break;
-        }
+    int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+                block_type, rank, &send_vec, &rec_vec);
 
-        mesh_impose_0_average(mesh, rank);
-
-        mesh_p_update_robin(mesh);
-
-        mpi_comm(mesh, &send_vec, &rec_vec, block_type, rank);
-
-        temp = mesh;
-        mesh = mesh_old;
-        mesh_old = temp;
-
-        itr++;
-    }
 
     if (is_master) {
         t1 = MPI_Wtime();
-        printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr + 1);
+        printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
     }
 
     /* Computes velocity */

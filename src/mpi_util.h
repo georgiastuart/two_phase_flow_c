@@ -2,7 +2,9 @@
 #define H_MPI_UTIL
 
 #include "util.h"
-#include "mesh.h"
+
+struct mesh;
+typedef struct mesh mesh_t;
 
 typedef struct send_vectors
 {
