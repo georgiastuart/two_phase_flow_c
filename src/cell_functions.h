@@ -27,6 +27,8 @@ typedef struct cell_ops
     void (*cell_update_corner)();
 } cell_ops_t;
 
+const cell_ops_t cell_p_ops;
+
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
 void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x);

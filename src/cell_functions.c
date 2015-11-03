@@ -6,6 +6,15 @@
 #include "util.h"
 #include "mesh.h"
 
+/* Function pointers for pressure cell operations */
+cell_p_ops = {
+	.cell_compute_beta 	   = &cell_p_compute_beta,
+	.cell_compute_A        = &cell_p_compute_A,
+	.cell_update_interior  = &cell_p_update_interior,
+	.cell_update_boundary  = &cell_p_update_boundary,
+	.cell_update_corner    = &cell_p_update_corner
+};
+
 /* Retrieves the cell adjacent to the current cell */
 /* 0 - up, 1 - right,  2 - down, 3 - left */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)

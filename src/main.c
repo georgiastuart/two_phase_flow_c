@@ -19,7 +19,6 @@ int main(int argc, char* argv[])
     receive_vectors_t rec_vec;
     send_vectors_t send_vec;
     double t1, t2;
-    cell_ops_t cell_p_ops;
 
     /* Initializes MPI and creates the config datatype */
     mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
@@ -67,9 +66,6 @@ int main(int argc, char* argv[])
         printf("Setup finished after %f seconds\n", t2 - t1);
         printf("Running iterations...\n");
     }
-
-    /* Initializes cell operation structs */
-    initialize_cell_ops(&cell_p_ops, "pressure");
 
     /* Iteration of the pressure problem */
     int itr;
