@@ -2,6 +2,7 @@
 #define H_CELL_FUNCTIONS
 
 #include "util.h"
+#include "diffusion_functions.h"
 
 struct mesh;
 typedef struct mesh mesh_t;

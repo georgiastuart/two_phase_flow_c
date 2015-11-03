@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "cell_functions.h"
-#include "util.h"
 #include "mesh.h"
 
 /* Function pointers for pressure cell operations */
@@ -32,7 +31,13 @@ int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
     return 0;
 }
 
-/* Computes beta at each gridpoint on the computational domain */
+/* Computes diffusion at the current cell */
+void cell_d_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
+{
+
+}
+
+/* Computes beta at the current cell */
 void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
     int k;
