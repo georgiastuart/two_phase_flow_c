@@ -376,6 +376,8 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int itr = 0;
     mesh_t *temp;
 
+    mesh_p_update_robin(mesh);
+
     for (;;) {
         itr++;
 
