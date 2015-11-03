@@ -32,8 +32,8 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_s
     /* Computes beta and A at all mesh points */
     for (i = 0; i < mesh->dim.ydim; i++) {
         for (j = 0; j < mesh->dim.xdim; j++) {
-            cell_compute_beta(mesh, i, j, c);
-            cell_compute_A(mesh, i, j);
+            cell_p_compute_beta(mesh, i, j, c);
+            cell_p_compute_A(mesh, i, j);
         }
     }
 
@@ -47,26 +47,26 @@ void iteration_9(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     /* Updates the corners */
-    cell_update_corner(mesh, mesh_old, 0, 0, 0, 3);
-    cell_update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
-    cell_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
-    cell_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
+    cell_p_update_corner(mesh, mesh_old, 0, 0, 0, 3);
+    cell_p_update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
+    cell_p_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
+    cell_p_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
 
     /* Updates the boundaries */
     for (i = 1; i < (mesh->dim.ydim - 1); i++) {
-        cell_update_boundary(mesh, mesh_old, i, 0, 3);
-        cell_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+        cell_p_update_boundary(mesh, mesh_old, i, 0, 3);
+        cell_p_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
     }
 
     for (i = 1; i < (mesh->dim.xdim - 1); i++) {
-        cell_update_boundary(mesh, mesh_old, 0, i, 0);
-        cell_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+        cell_p_update_boundary(mesh, mesh_old, 0, i, 0);
+        cell_p_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
     }
 
     /* Updates the interior cells */
     for (i = 1; i < (mesh->dim.ydim - 1); i++) {
         for (j = 1; j < (mesh->dim.xdim - 1); j++) {
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
         }
     }
 }
@@ -77,17 +77,17 @@ void iteration_0(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     /* Update corner */
-    cell_update_corner(mesh, mesh_old, 0, 0, 0, 3);
+    cell_p_update_corner(mesh, mesh_old, 0, 0, 0, 3);
 
     for (i = 1; i < mesh->dim.xdim; i++)
-        cell_update_boundary(mesh, mesh_old, 0, i, 0);
+        cell_p_update_boundary(mesh, mesh_old, 0, i, 0);
 
     for (i = 1; i < mesh->dim.ydim; i++)
-        cell_update_boundary(mesh, mesh_old, i, 0, 3);
+        cell_p_update_boundary(mesh, mesh_old, i, 0, 3);
 
     for (i = 1; i < mesh->dim.ydim; i++) {
         for (j = 1; j < mesh->dim.xdim; j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -97,11 +97,11 @@ void iteration_1(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     for (i = 0; i < mesh->dim.xdim; i++)
-        cell_update_boundary(mesh, mesh_old, 0, i, 0);
+        cell_p_update_boundary(mesh, mesh_old, 0, i, 0);
 
     for (i = 1; i < mesh->dim.ydim; i++) {
         for (j = 0; j < mesh->dim.xdim; j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -111,17 +111,17 @@ void iteration_2(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     /* Update corner */
-    cell_update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
+    cell_p_update_corner(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
 
     for (i = 0; i < (mesh->dim.xdim - 1); i++)
-        cell_update_boundary(mesh, mesh_old, 0, i, 0);
+        cell_p_update_boundary(mesh, mesh_old, 0, i, 0);
 
     for (i = 1; i < mesh->dim.ydim; i++)
-        cell_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+        cell_p_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
     for (i = 1; i < mesh->dim.ydim; i++) {
         for (j = 0; j < (mesh->dim.xdim - 1); j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -131,11 +131,11 @@ void iteration_3(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     for (i = 0; i < mesh->dim.ydim; i++)
-        cell_update_boundary(mesh, mesh_old, i, 0, 3);
+        cell_p_update_boundary(mesh, mesh_old, i, 0, 3);
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         for (j = 1; j < mesh->dim.xdim; j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -146,7 +146,7 @@ void iteration_4(mesh_t *mesh, mesh_t *mesh_old)
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         for (j = 0; j < mesh->dim.xdim; j++) {
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
         }
     }
 }
@@ -157,11 +157,11 @@ void iteration_5(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     for (i = 0; i < mesh->dim.ydim; i++)
-        cell_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+        cell_p_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         for (j = 0; j < (mesh->dim.xdim - 1); j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -171,17 +171,17 @@ void iteration_6(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     /* Update corner */
-    cell_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
+    cell_p_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
 
     for (i = 1; i < mesh->dim.xdim; i++)
-        cell_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+        cell_p_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
 
     for (i = 0; i < (mesh->dim.ydim - 1); i++)
-        cell_update_boundary(mesh, mesh_old, i, 0, 3);
+        cell_p_update_boundary(mesh, mesh_old, i, 0, 3);
 
     for (i = 0; i < (mesh->dim.ydim - 1); i++) {
         for (j = 1; j < mesh->dim.xdim; j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -191,12 +191,12 @@ void iteration_7(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     for (i = 0; i < mesh->dim.xdim; i++) {
-        cell_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+        cell_p_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
     }
 
     for (i = 0; i < (mesh->dim.ydim - 1); i++) {
         for (j = 0; j < mesh->dim.xdim; j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 
@@ -206,17 +206,17 @@ void iteration_8(mesh_t *mesh, mesh_t *mesh_old)
     int i, j;
 
     /* Update corner */
-    cell_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
+    cell_p_update_corner(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
 
     for (i = 0; i < (mesh->dim.xdim - 1); i++)
-        cell_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+        cell_p_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
 
     for (i = 0; i < (mesh->dim.ydim - 1); i++)
-        cell_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+        cell_p_update_boundary(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
 
     for (i = 0; i < (mesh->dim.ydim - 1); i++) {
         for (j = 0; j < (mesh->dim.xdim - 1); j++)
-            cell_update_interior(mesh, mesh_old, i, j);
+            cell_p_update_interior(mesh, mesh_old, i, j);
     }
 }
 

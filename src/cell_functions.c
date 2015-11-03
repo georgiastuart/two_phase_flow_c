@@ -24,7 +24,7 @@ int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
 }
 
 /* Computes beta at each gridpoint on the computational domain */
-void cell_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
+void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
     int k;
     double perm_eff;
@@ -50,7 +50,7 @@ void cell_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 }
 
 /* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
-void cell_compute_A(mesh_t *mesh, int cur_y, int cur_x)
+void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 {
     double xi;
     int k;
@@ -65,7 +65,7 @@ void cell_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Updates the pressure, flux, and robin conditions for a cell */
-void cell_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
+void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 {
     int k;
     cell_t *cur_cell, *cur_cell_old, *adj_cell;
@@ -100,7 +100,8 @@ void cell_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
     }
 }
 
-void cell_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x, int boundary_side)
+void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+        int boundary_side)
 {
     int k;
     cell_t *cur_cell, *cur_cell_old, *adj_cell;
@@ -142,7 +143,7 @@ void cell_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x, 
     }
 }
 
-void cell_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2)
 {
     int k;
