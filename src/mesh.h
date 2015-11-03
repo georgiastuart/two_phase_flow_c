@@ -20,8 +20,7 @@ typedef struct mesh
     global_mesh_params_t global;
 } mesh_t;
 
-mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_strength,
-                        double *source, double c);
+mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config);
 void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
 int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
 void mesh_impose_0_average(mesh_t *mesh, int rank);

@@ -49,10 +49,8 @@ int main(int argc, char* argv[])
     init_dim(&config, &dim);
 
     /* Initializes the meshes */
-    mesh = mesh_init_mesh(dim, perm, config.perm_scale, config.perm_strength,
-                            source, config.beta_coef);
-    mesh_old = mesh_init_mesh(dim, perm, config.perm_scale, config.perm_strength,
-                            source, config.beta_coef);
+    mesh = mesh_init_mesh(dim, perm, source, &config);
+    mesh_old = mesh_init_mesh(dim, perm, source, &config);
 
     /* Initializes send and receive structs for MPI */
     mpi_init_send_receive(mesh, &send_vec, &rec_vec);

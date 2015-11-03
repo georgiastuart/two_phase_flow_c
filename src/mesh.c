@@ -7,8 +7,7 @@
 #include "cell_functions.h"
 
 /* Sets up the mesh with cell structs at each gridpoint */
-mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_strength,
-                        double *source, double c)
+mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config)
 {
     int i, j;
     mesh_t *mesh;
@@ -20,11 +19,19 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_s
 
     mesh->dim = dim;
 
+    /* Sets global parameters */
+    mesh->global.porosity = config->porosity;
+    mesh->global.sat_rel_o = config->sat_rel_o;
+    mesh->global.sat_rel_w = config->sat_rel_w;
+    mesh->global.visc_o = config->visc_o;
+    mesh->global.visc_w = config->visc_w;
+
     /* Sets cell permeability and sources */
     for (i = 0; i < (mesh->dim.ydim + 2); i++) {
         for (j = 0; j < (mesh->dim.xdim + 2); j++) {
             cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
-            cur_cell->perm = pow(10, -11) * exp(perm_strength * perm[MESH_INDEX_INC_PAD(i, j)]);
+            cur_cell->perm = config->perm_scale * exp(config->perm_strength
+                    * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
         }
     }
@@ -32,7 +39,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_s
     /* Computes beta and A at all mesh points */
     for (i = 0; i < mesh->dim.ydim; i++) {
         for (j = 0; j < mesh->dim.xdim; j++) {
-            cell_p_compute_beta(mesh, i, j, c);
+            cell_p_compute_beta(mesh, i, j, config->beta_coef);
             cell_p_compute_A(mesh, i, j);
         }
     }
