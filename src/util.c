@@ -57,6 +57,21 @@ static int config_helper(void *config, const char *section, const char *name,
     } else if (MATCH("other", "beta_coef")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->beta_coef = d;
+    } else if (MATCH("other", "porosity")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->porosity = d;
+    } else if (MATCH("other", "sat_rel_o")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->sat_rel_o = d;
+    } else if (MATCH("other", "sat_rel_w")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->sat_rel_w = d;
+    } else if (MATCH("other", "visc_o")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->visc_o = d;
+    } else if (MATCH("other", "visc_w")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->visc_w = d;
     } else if (MATCH("mpi", "num_processes")) {
         pconfig->num_processes = atoi(value);
     } else if (MATCH("mpi", "num_subdomains_x")) {
@@ -213,7 +228,7 @@ void print_attribute(mesh_t *mesh, char *attribute)
 
             for (i = 0; i < mesh->dim.ydim; i++) {
                 for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].beta[k]);
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].beta_p[k]);
                 }
                 printf("\n");
             }

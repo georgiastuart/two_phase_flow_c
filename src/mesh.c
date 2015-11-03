@@ -42,7 +42,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_s
 
 /* One iteration of the algorithm over all mesh points */
 /* 0 - up, 1 - right,  2 - down, 3 - left */
-void update_9(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_9(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -72,7 +72,7 @@ void update_9(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 0 block */
-void update_0(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_0(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -92,7 +92,7 @@ void update_0(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 1 block */
-void update_1(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_1(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -106,7 +106,7 @@ void update_1(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 2 block */
-void update_2(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_2(mesh_t *mesh, mesh_t *mesh_old, const const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -126,7 +126,7 @@ void update_2(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 3 block */
-void update_3(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_3(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -140,7 +140,7 @@ void update_3(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 4 block */
-void update_4(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_4(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -152,7 +152,7 @@ void update_4(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 5 block */
-void update_5(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_5(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -166,7 +166,7 @@ void update_5(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 6 block */
-void update_6(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_6(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -186,7 +186,7 @@ void update_6(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 7 block */
-void update_7(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_7(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -201,7 +201,7 @@ void update_7(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
 }
 
 /* Iteration for a type 8 block */
-void update_8(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
+void update_8(mesh_t *mesh, mesh_t *mesh_old, const cell_ops_t *cell_ops)
 {
     int i, j;
 
@@ -220,7 +220,7 @@ void update_8(mesh_t *mesh, mesh_t *mesh_old, cell_ops_t *cell_ops)
     }
 }
 
-void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, cell_ops_t *cell_ops)
+void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops)
 {
     switch (block_type) {
         case 9:
@@ -329,7 +329,7 @@ void mesh_impose_0_average(mesh_t *mesh, int rank)
 }
 
 /* Updates the robin conditions along the boundaries */
-void mesh_update_robin(mesh_t *mesh)
+void mesh_p_update_robin(mesh_t *mesh)
 {
     int i, j, k;
     cell_t *cur_cell;
@@ -339,7 +339,7 @@ void mesh_update_robin(mesh_t *mesh)
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
 
             for (k = 0; k < 4; k++) {
-                cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux[k] + cur_cell->l[k];
+                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux[k] + cur_cell->l[k];
             }
         }
     }

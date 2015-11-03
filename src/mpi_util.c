@@ -7,7 +7,7 @@
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
 #define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)
 #define NDIMS 2
-#define CONFIG_LEN 16
+#define CONFIG_LEN 21
 #define STR_LEN 100
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
@@ -19,11 +19,12 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     /* Create type for config struct */
     const int nitems = CONFIG_LEN;
     int blocklengths[CONFIG_LEN] = {1, 1, 1, 1, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, 1,
-                            STR_LEN, STR_LEN, STR_LEN};
+                            STR_LEN, STR_LEN, STR_LEN, 1, 1, 1, 1, 1};
     MPI_Datatype types[CONFIG_LEN] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_CHAR, MPI_CHAR};
+                                MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_CHAR, MPI_CHAR,
+                                MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
     MPI_Aint offsets[CONFIG_LEN];
 
     offsets[0] = offsetof(config_t, xdim);
@@ -42,6 +43,11 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[13] = offsetof(config_t, pressure_out);
     offsets[14] = offsetof(config_t, velocity_y_out);
     offsets[15] = offsetof(config_t, velocity_x_out);
+    offsets[16] = offsetof(config_t, porosity);
+    offsets[17] = offsetof(config_t, sat_rel_o);
+    offsets[18] = offsetof(config_t, sat_rel_w);
+    offsets[19] = offsetof(config_t, visc_o);
+    offsets[20] = offsetof(config_t, visc_w);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);

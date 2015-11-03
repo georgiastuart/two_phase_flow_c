@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
         mesh_impose_0_average(mesh, rank);
 
-        mesh_update_robin(mesh);
+        mesh_p_update_robin(mesh);
 
         mpi_comm(mesh, &send_vec, &rec_vec, block_type, rank);
 

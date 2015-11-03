@@ -10,7 +10,7 @@ typedef struct mesh mesh_t;
 typedef struct dim
 {
     int xdim, ydim, num_subdomains_x, num_subdomains_y, x_full_dim, y_full_dim;
-    double h, xlen, ylen;
+    double h, xlen, ylen, dt;
 } dim_t;
 
 typedef struct config
@@ -20,6 +20,7 @@ typedef struct config
     char perm_file[100], src_file[100], pressure_out[100], velocity_y_out[100], velocity_x_out[100];
     double perm_scale, perm_strength, conv_cutoff, beta_coef;
     int num_processes, num_subdomains_x, num_subdomains_y;
+    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w;
 } config_t;
 
 void init_dim(config_t *config, dim_t *dim);

@@ -8,18 +8,24 @@
 #include "util.h"
 #include "cell_functions.h"
 
+typedef struct global_mesh_params
+{
+    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w;
+} global_mesh_params_t;
+
 typedef struct mesh
 {
     cell_t *cell;
     dim_t dim;
+    global_mesh_params_t global;
 } mesh_t;
 
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_strength,
                         double *source, double c);
-void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, cell_ops_t *cell_ops);
+void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
 int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
 void mesh_impose_0_average(mesh_t *mesh, int rank);
-void mesh_update_robin(mesh_t *mesh);
+void mesh_p_update_robin(mesh_t *mesh);
 void print_attribute(mesh_t *mesh, char *attribute);
 void print_attribute_to_file(mesh_t *mesh, char *attribute);
 double* read_file_pad(const char* file_name, int ydim, int xdim);
