@@ -16,7 +16,7 @@ typedef struct mesh
 
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double perm_scale, double perm_strength,
                         double *source, double c);
-void mesh_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type);
+void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, cell_ops_t *cell_ops);
 int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
 void mesh_impose_0_average(mesh_t *mesh, int rank);
 void mesh_update_robin(mesh_t *mesh);

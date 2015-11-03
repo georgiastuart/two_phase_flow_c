@@ -3,6 +3,7 @@
 #include <math.h>
 #include "util.h"
 #include "mesh.h"
+#include "cell_functions.h"
 #include "mpi_util.h"
 
 #define NDIMS 2
@@ -18,6 +19,7 @@ int main(int argc, char* argv[])
     receive_vectors_t rec_vec;
     send_vectors_t send_vec;
     double t1, t2;
+    cell_ops_t cell_p_ops;
 
     /* Initializes MPI and creates the config datatype */
     mpi_setup(&argc, &argv, &rank, &size, &mpi_config_t);
@@ -66,11 +68,14 @@ int main(int argc, char* argv[])
         printf("Running iterations...\n");
     }
 
+    /* Initializes cell operation structs */
+    initialize_cell_ops(&cell_p_ops, "pressure");
+
     /* Iteration of the pressure problem */
     int itr;
     itr = 0;
     for (;;) {
-        mesh_iteration(mesh, mesh_old, block_type);
+        mesh_update(mesh, mesh_old, block_type, &cell_p_ops);
         if ( mesh_convergence_check(mesh, mesh_old, config.conv_cutoff, rank) ) {
             break;
         }

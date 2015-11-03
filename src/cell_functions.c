@@ -185,3 +185,14 @@ void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
         }
     }
 }
+
+void initialize_cell_ops(cell_ops_t *cell_ops, const char *mode)
+{
+    if (!strcmp(mode, "pressure")) {
+        cell_ops->cell_compute_beta = cell_p_compute_beta;
+        cell_ops->cell_compute_A = cell_p_compute_A;
+        cell_ops->cell_update_interior = cell_p_update_interior;
+        cell_ops->cell_update_boundary = cell_p_update_boundary;
+        cell_ops->cell_update_corner = cell_p_update_corner;
+    }
+}
