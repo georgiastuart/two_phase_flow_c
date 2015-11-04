@@ -12,7 +12,7 @@ typedef struct cell
     double perm, pressure, source, saturation, saturation_prev, diffusion, diff_source;
 
     /* Values that live along the edges */
-    double flux[4], l[4], beta_p[4], robin[4], A_p[4], beta_d[4], A_d[4];
+    double flux_p[4], l[4], beta_p[4], robin[4], A_p[4], beta_d[4], A_d[4];
 
     /* Final velocity data */
     double velocity_y, velocity_x;

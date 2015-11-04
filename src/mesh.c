@@ -348,7 +348,7 @@ void mesh_p_update_robin(mesh_t *mesh)
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
 
             for (k = 0; k < 4; k++) {
-                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux[k] + cur_cell->l[k];
+                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + cur_cell->l[k];
             }
         }
     }
@@ -364,8 +364,8 @@ void mesh_compute_velocity(mesh_t *mesh)
         for (j = 0; j < mesh->dim.xdim; j++) {
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
 
-            cur_cell->velocity_y = (cur_cell->flux[0] - cur_cell->flux[2]) / 2;
-            cur_cell->velocity_x = (cur_cell->flux[1] - cur_cell->flux[3]) / 2;
+            cur_cell->velocity_y = (cur_cell->flux_p[0] - cur_cell->flux_p[2]) / 2;
+            cur_cell->velocity_x = (cur_cell->flux_p[1] - cur_cell->flux_p[3]) / 2;
         }
     }
 }

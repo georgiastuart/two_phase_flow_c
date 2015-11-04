@@ -171,13 +171,13 @@ void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     for (k = 0; k < 4; k++) {
         adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
         A = cur_cell->A_p[k];
-        cur_cell->flux[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
+        cur_cell->flux_p[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
     }
 
     /* Updates the pressure at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
         adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-        cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux[k] + adj_cell->robin[(k + 2) % 4];
+        cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + adj_cell->robin[(k + 2) % 4];
     }
 }
 
@@ -210,7 +210,7 @@ void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
         if (k != boundary_side) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
             A = cur_cell->A_p[k];
-            cur_cell->flux[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
+            cur_cell->flux_p[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
         }
     }
 
@@ -218,7 +218,7 @@ void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     for (k = 0; k < 4; k ++) {
         if (k != boundary_side) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-            cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux[k] +
+            cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] +
                                 adj_cell->robin[(k + 2) % 4];
         }
     }
@@ -253,7 +253,7 @@ void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
         if ((k != boundary_side1) && (k != boundary_side2)) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
             A = cur_cell->A_p[k];
-            cur_cell->flux[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
+            cur_cell->flux_p[k] = A * (cur_cell->pressure - adj_cell->robin[(k + 2) % 4]);
         }
     }
 
@@ -261,7 +261,7 @@ void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
     for (k = 0; k < 4; k ++) {
         if ((k != boundary_side1) && (k != boundary_side2)) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-            cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux[k] +
+            cur_cell->l[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] +
                                 adj_cell->robin[(k + 2) % 4];
         }
     }

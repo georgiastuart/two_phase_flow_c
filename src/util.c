@@ -289,7 +289,7 @@ void print_attribute(mesh_t *mesh, char *attribute)
 
             for (i = 0; i < mesh->dim.ydim; i++) {
                 for (j = 0; j < mesh->dim.xdim; j++) {
-                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].flux[k]);
+                    printf("%e\t", mesh->cell[MESH_INDEX(i, j)].flux_p[k]);
                 }
                 printf("\n");
             }
