@@ -54,7 +54,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     }
 
     /* Computes beta and A at all mesh points */
-    mesh_compute_beta_A(mesh, &cell_p_ops);
+    mesh_compute_beta_A(mesh, &cell_press_ops);
 
     return mesh;
 }
@@ -277,7 +277,7 @@ void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_
 
 /* Checks for convergence at a specified cutoff. Returns 1 if relative error */
 /* is less than the convergence cutoff, 0 otherwise */
-int mesh_p_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
+int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
 {
     int i, j;
     double num, denom, p_new, p_old, rel_error, global_num, global_denom;
@@ -312,7 +312,7 @@ int mesh_p_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 }
 
 /* Ensures the average pressure is 0 */
-void mesh_p_impose_0_average(mesh_t *mesh, int rank)
+void mesh_press_impose_0_average(mesh_t *mesh, int rank)
 {
     int N, i, j, k;
     double sum, global_sum, avg;
@@ -379,20 +379,20 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int itr = 0;
     mesh_t *temp;
 
-    mesh_compute_beta_A(mesh, &cell_p_ops);
-    mesh_update_robin(mesh, &cell_p_ops);
+    mesh_compute_beta_A(mesh, &cell_press_ops);
+    mesh_update_robin(mesh, &cell_press_ops);
 
     for (;;) {
         itr++;
 
-        mesh_update(mesh, mesh_old, block_type, &cell_p_ops);
+        mesh_update(mesh, mesh_old, block_type, &cell_press_ops);
 
-        if (mesh_p_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
+        if (mesh_press_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
             break;
         }
 
-        mesh_p_impose_0_average(mesh, rank);
-        mesh_update_robin(mesh, &cell_p_ops);
+        mesh_press_impose_0_average(mesh, rank);
+        mesh_update_robin(mesh, &cell_press_ops);
         mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
 
         temp = mesh;

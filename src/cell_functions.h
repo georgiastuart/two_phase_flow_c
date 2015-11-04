@@ -29,19 +29,19 @@ typedef struct cell_ops
     void (*cell_compute_robin)();
 } cell_ops_t;
 
-extern const cell_ops_t cell_p_ops;
+extern const cell_ops_t cell_press_ops;
 
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
-void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
-void cell_d_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
-void cell_p_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
-void cell_d_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
-void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x);
-void cell_d_compute_A(mesh_t *mesh, int cur_y, int cur_x);
-void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x);
-void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
+void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
+void press_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
+void diff_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
+void press_compute_A(mesh_t *mesh, int cur_y, int cur_x);
+void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x);
+void press_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x);
+void press_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side);
-void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2);
 
 #endif /* H_CELL_FUNCTIONS */

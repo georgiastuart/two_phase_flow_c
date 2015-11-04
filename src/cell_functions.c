@@ -6,13 +6,13 @@
 #include "mesh.h"
 
 /* Function pointers for pressure cell operations */
-const cell_ops_t cell_p_ops = {
-	.cell_compute_beta 	   	= &cell_p_compute_beta,
-	.cell_compute_A        	= &cell_p_compute_A,
-	.cell_update_interior  	= &cell_p_update_interior,
-	.cell_update_boundary  	= &cell_p_update_boundary,
-	.cell_update_corner    	= &cell_p_update_corner,
-	.cell_compute_robin		= &cell_p_compute_robin
+const cell_ops_t cell_press_ops = {
+	.cell_compute_beta 	   	= &press_compute_beta,
+	.cell_compute_A        	= &press_compute_A,
+	.cell_update_interior  	= &press_update_interior,
+	.cell_update_boundary  	= &press_update_boundary,
+	.cell_update_corner    	= &press_update_corner,
+	.cell_compute_robin		= &press_compute_robin
 };
 
 /* Retrieves the cell adjacent to the current cell */
@@ -90,7 +90,7 @@ double cap_pressure_deriv(cell_t *cell, global_mesh_params_t *global)
 }
 
 /* Computes diffusion at the current cell */
-void cell_d_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
+void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
 {
     double total_mob, w_mob, o_mob, pc_deriv;
     cell_t *cur_cell;
@@ -106,7 +106,7 @@ void cell_d_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Combutes beta at the current cell for diffusion problem */
-void cell_d_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
+void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
 	cell_t *cur_cell, *adj_cell;
 
@@ -119,7 +119,7 @@ void cell_d_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 }
 
 /* Computes beta at the current cell for pressure problem */
-void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
+void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
     double perm_eff;
     cell_t *cur_cell, *adj_cell;
@@ -144,7 +144,7 @@ void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 }
 
 /* Computes robin conditions for the pressure problem */
-void cell_p_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
+void press_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
 {
 	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
@@ -154,7 +154,7 @@ void cell_p_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Computes robin conditions for the diffusion problem */
-void cell_d_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
+void diff_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
 {
 	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
@@ -164,7 +164,7 @@ void cell_d_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
-void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x)
+void press_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 {
     double xi;
     cell_t *cur_cell;
@@ -178,7 +178,7 @@ void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
-void cell_d_compute_A(mesh_t *mesh, int cur_y, int cur_x)
+void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 {
     double xi;
     cell_t *cur_cell;
@@ -192,7 +192,7 @@ void cell_d_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 }
 
 /* Updates the pressure, flux, and robin conditions for a cell */
-void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
+void press_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 {
     int k;
     cell_t *cur_cell, *cur_cell_old, *adj_cell;
@@ -227,7 +227,13 @@ void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     }
 }
 
-void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+/* Updates the saturation and flux for the diffusion problem on interior cells */
+void diff_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
+{
+
+}
+
+void press_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
         int boundary_side)
 {
     int k;
@@ -270,7 +276,7 @@ void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     }
 }
 
-void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2)
 {
     int k;
