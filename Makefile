@@ -3,7 +3,7 @@ all: bin/two_phase_flow_c
 vpath %.c src
 vpath %.h src
 
-src/main.o: main.c util.h mesh.h mpi_util.h
+src/main.o: main.c util.h mesh.h mpi_util.h cell_functions.h
 src/util.o: util.c util.h mesh.h
 src/mesh.o: mesh.c mesh.h cell_functions.h util.h
 src/cell_functions.o: util.h cell_functions.c cell_functions.h mesh.h

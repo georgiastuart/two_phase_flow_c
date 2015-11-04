@@ -331,7 +331,7 @@ void mesh_impose_0_average(mesh_t *mesh, int rank)
             mesh->cell[MESH_INDEX(i, j)].pressure -= avg;
 
             for (k = 0; k < 4; k++) {
-                mesh->cell[MESH_INDEX(i, j)].l[k] -= avg;
+                mesh->cell[MESH_INDEX(i, j)].l_p[k] -= avg;
             }
         }
     }
@@ -348,7 +348,7 @@ void mesh_p_update_robin(mesh_t *mesh)
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
 
             for (k = 0; k < 4; k++) {
-                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + cur_cell->l[k];
+                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + cur_cell->l_p[k];
             }
         }
     }
