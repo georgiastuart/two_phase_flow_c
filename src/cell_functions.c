@@ -230,7 +230,42 @@ void press_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 /* Updates the saturation and flux for the diffusion problem on interior cells */
 void diff_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 {
+	int k;
+	cell_t *cur_cell, *cur_cell_old, *adj_cell;
+	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
 
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	sum_A = 0;
+	sum_A_R = 0;
+
+	/* Updates saturation for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+		sum_A += cur_cell_old->A_d[k];
+		sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];
+	}
+
+	phi_h_dt = (mesh->global.porosity * mesh->dim.h / mesh->dim.dt);
+
+	num = cur_cell_old->source_d * mesh->dim.h + sum_A_R + phi_h_dt * cur_cell_old->saturation_prev;
+	denom = phi_h_dt + sum_A;
+
+	cur_cell->saturation = num / denom;
+
+	/* Updates flux for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+        A = cur_cell->A_d[k];
+        cur_cell->flux_d[k] = A * (cur_cell->saturation - adj_cell->robin[(k + 2) % 4]);
+	}
+
+	/* Updates the pressure at the edges of the current cell in the new mesh */
+    for (k = 0; k < 4; k ++) {
+        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+        cur_cell->l_d[k] = cur_cell->beta[k] * cur_cell->flux_d[k] + adj_cell->robin[(k + 2) % 4];
+    }
 }
 
 void press_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
@@ -276,6 +311,53 @@ void press_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
     }
 }
 
+void diff_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+        int boundary_side)
+{
+	int k;
+	cell_t *cur_cell, *cur_cell_old, *adj_cell;
+	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
+
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	sum_A = 0;
+	sum_A_R = 0;
+
+	/* Updates saturation for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		if (k != boundary_side) {
+			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+			sum_A += cur_cell_old->A_d[k];
+			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];
+		}
+	}
+
+	phi_h_dt = (mesh->global.porosity * mesh->dim.h / mesh->dim.dt);
+
+	num = cur_cell_old->source_d * mesh->dim.h + sum_A_R + phi_h_dt * cur_cell_old->saturation_prev;
+	denom = phi_h_dt + sum_A;
+
+	cur_cell->saturation = num / denom;
+
+	/* Updates flux for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		if (k != boundary_side) {
+			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+	        A = cur_cell->A_d[k];
+	        cur_cell->flux_d[k] = A * (cur_cell->saturation - adj_cell->robin[(k + 2) % 4]);
+		}
+	}
+
+	/* Updates the pressure at the edges of the current cell in the new mesh */
+    for (k = 0; k < 4; k ++) {
+		if (k != boundary_side) {
+	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+		    cur_cell->l_d[k] = cur_cell->beta[k] * cur_cell->flux_d[k] + adj_cell->robin[(k + 2) % 4];
+		}
+	}
+}
+
 void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2)
 {
@@ -317,4 +399,51 @@ void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                                 adj_cell->robin[(k + 2) % 4];
         }
     }
+}
+
+void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+                    int boundary_side1, int boundary_side2)
+{
+	int k;
+	cell_t *cur_cell, *cur_cell_old, *adj_cell;
+	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
+
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	sum_A = 0;
+	sum_A_R = 0;
+
+	/* Updates saturation for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		if ((k != boundary_side1) && (k != boundary_side2)) {
+			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+			sum_A += cur_cell_old->A_d[k];
+			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];
+		}
+	}
+
+	phi_h_dt = (mesh->global.porosity * mesh->dim.h / mesh->dim.dt);
+
+	num = cur_cell_old->source_d * mesh->dim.h + sum_A_R + phi_h_dt * cur_cell_old->saturation_prev;
+	denom = phi_h_dt + sum_A;
+
+	cur_cell->saturation = num / denom;
+
+	/* Updates flux for the current cell on the new mesh */
+	for (k = 0; k < 4; k++) {
+		if ((k != boundary_side1) && (k != boundary_side2)) {
+			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+	        A = cur_cell->A_d[k];
+	        cur_cell->flux_d[k] = A * (cur_cell->saturation - adj_cell->robin[(k + 2) % 4]);
+		}
+	}
+
+	/* Updates the pressure at the edges of the current cell in the new mesh */
+    for (k = 0; k < 4; k ++) {
+		if ((k != boundary_side1) && (k != boundary_side2)) {
+	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+		    cur_cell->l_d[k] = cur_cell->beta[k] * cur_cell->flux_d[k] + adj_cell->robin[(k + 2) % 4];
+		}
+	}
 }

@@ -10,7 +10,7 @@ typedef struct mesh mesh_t;
 typedef struct dim
 {
     int xdim, ydim, num_subdomains_x, num_subdomains_y, x_full_dim, y_full_dim;
-    double h, xlen, ylen, dt;
+    double h, xlen, ylen, dt, dt_transport;
 } dim_t;
 
 typedef struct config
@@ -26,6 +26,7 @@ typedef struct config
 void init_dim(config_t *config, dim_t *dim);
 int read_config(const char* file_name, config_t *config);
 double* read_file(const char* file_name, int ydim, int xdim);
+double* read_file_pad(const char* file_name, int ydim, int xdim);
 void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,
                     int num_subdomains_x, int size, const char* mode);
 

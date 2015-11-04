@@ -9,7 +9,7 @@ typedef struct mesh mesh_t;
 typedef struct cell
 {
     /* Values that live at the center of each cell */
-    double perm, pressure, source, saturation, saturation_prev, diffusion, diff_source;
+    double perm, pressure, source, saturation, saturation_prev, diffusion, source_d;
 
     /* Values that live along the edges */
     double flux_p[4], l_p[4], beta[4], robin[4], A_p[4];
