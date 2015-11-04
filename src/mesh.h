@@ -12,6 +12,7 @@
 typedef struct global_mesh_params
 {
     double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w, eta, beta_coef;
+    double delta_t, delta_t_transport;
 } global_mesh_params_t;
 
 typedef struct mesh
