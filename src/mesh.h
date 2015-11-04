@@ -11,7 +11,7 @@
 
 typedef struct global_mesh_params
 {
-    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w, eta;
+    double porosity, visc_o, visc_w, sat_rel_o, sat_rel_w, eta, beta_coef;
 } global_mesh_params_t;
 
 typedef struct mesh
@@ -23,9 +23,9 @@ typedef struct mesh
 
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config);
 void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
-int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
-void mesh_impose_0_average(mesh_t *mesh, int rank);
-void mesh_p_update_robin(mesh_t *mesh);
+int mesh_p_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
+void mesh_p_impose_0_average(mesh_t *mesh, int rank);
+void mesh_update_robin(mesh_t *mesh, const cell_ops_t *cell_ops);
 void print_attribute(mesh_t *mesh, char *attribute);
 void print_attribute_to_file(mesh_t *mesh, char *attribute);
 double* read_file_pad(const char* file_name, int ydim, int xdim);

@@ -12,7 +12,7 @@ typedef struct cell
     double perm, pressure, source, saturation, saturation_prev, diffusion, diff_source;
 
     /* Values that live along the edges */
-    double flux_p[4], l_p[4], beta_p[4], robin[4], A_p[4];
+    double flux_p[4], l_p[4], beta[4], robin[4], A_p[4];
     double flux_d[4], l_d[4], beta_d[4], A_d[4];
 
     /* Final velocity data */
@@ -26,13 +26,18 @@ typedef struct cell_ops
     void (*cell_update_interior)();
     void (*cell_update_boundary)();
     void (*cell_update_corner)();
+    void (*cell_compute_robin)();
 } cell_ops_t;
 
 extern const cell_ops_t cell_p_ops;
 
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
+void cell_d_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
+void cell_p_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
+void cell_d_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
 void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x);
+void cell_d_compute_A(mesh_t *mesh, int cur_y, int cur_x);
 void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x);
 void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side);

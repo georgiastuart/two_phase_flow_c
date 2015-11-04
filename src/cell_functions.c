@@ -7,11 +7,12 @@
 
 /* Function pointers for pressure cell operations */
 const cell_ops_t cell_p_ops = {
-	.cell_compute_beta 	   = &cell_p_compute_beta,
-	.cell_compute_A        = &cell_p_compute_A,
-	.cell_update_interior  = &cell_p_update_interior,
-	.cell_update_boundary  = &cell_p_update_boundary,
-	.cell_update_corner    = &cell_p_update_corner
+	.cell_compute_beta 	   	= &cell_p_compute_beta,
+	.cell_compute_A        	= &cell_p_compute_A,
+	.cell_update_interior  	= &cell_p_update_interior,
+	.cell_update_boundary  	= &cell_p_update_boundary,
+	.cell_update_corner    	= &cell_p_update_corner,
+	.cell_compute_robin		= &cell_p_compute_robin
 };
 
 /* Retrieves the cell adjacent to the current cell */
@@ -104,44 +105,89 @@ void cell_d_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
     cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
 }
 
+/* Combutes beta at the current cell for diffusion problem */
+void cell_d_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
+{
+	cell_t *cur_cell, *adj_cell;
+
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	for (int k = 0; k < 4; k++) {
+		adj_cell = &mesh->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+		cur_cell->beta[k] = 2 / (1 / cur_cell->diffusion + 1 / adj_cell->diffusion);
+	}
+}
+
 /* Computes beta at the current cell for pressure problem */
 void cell_p_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
-    int k;
     double perm_eff;
     cell_t *cur_cell, *adj_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
-    for (k = 0; k < 4; k++) {
+    for (int k = 0; k < 4; k++) {
         adj_cell = &mesh->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
         if (adj_cell->perm == 0) {
-            cur_cell->beta_p[k] = 0;
+            cur_cell->beta[k] = 0;
         } else {
             perm_eff = 2 * adj_cell->perm * cur_cell->perm;
             perm_eff /= (adj_cell->perm + cur_cell->perm);
-            cur_cell->beta_p[k] = beta_coef * mesh->dim.h / perm_eff;
+            cur_cell->beta[k] = beta_coef * mesh->dim.h / perm_eff;
         }
 
         /* temp fix for weird inf bug */
-        if ((cur_cell->beta_p[k] == INFINITY) || (cur_cell->beta_p[k] == NAN)) {
-            cur_cell->beta_p[k] = 0;
+        if ((cur_cell->beta[k] == INFINITY) || (cur_cell->beta[k] == NAN)) {
+            cur_cell->beta[k] = 0;
         }
     }
+}
+
+/* Computes robin conditions for the pressure problem */
+void cell_p_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
+{
+	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	for (int k = 0; k < 4; k++) {
+		cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux_p[k] + cur_cell->l_p[k];
+	}
+}
+
+/* Computes robin conditions for the diffusion problem */
+void cell_d_compute_robin(mesh_t *mesh, int cur_y, int cur_x)
+{
+	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	for (int k = 0; k < 4; k++) {
+		cur_cell->robin[k] = cur_cell->beta[k] * cur_cell->flux_d[k] + cur_cell->l_d[k];
+	}
 }
 
 /* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
 void cell_p_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 {
     double xi;
-    int k;
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
     xi = 2 * cur_cell->perm / mesh->dim.h;
 
-    for (k = 0; k < 4; k++) {
-        cur_cell->A_p[k] = xi / (1 + cur_cell->beta_p[k] * xi);
+    for (int k = 0; k < 4; k++) {
+        cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
+    }
+}
+
+/* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
+void cell_d_compute_A(mesh_t *mesh, int cur_y, int cur_x)
+{
+    double xi;
+    cell_t *cur_cell;
+
+    cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+    xi = 2 * cur_cell->diffusion / mesh->dim.h;
+
+    for (int k = 0; k < 4; k++) {
+        cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
     }
 }
 
@@ -177,7 +223,7 @@ void cell_p_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     /* Updates the pressure at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
         adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-        cur_cell->l_p[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + adj_cell->robin[(k + 2) % 4];
+        cur_cell->l_p[k] = cur_cell->beta[k] * cur_cell->flux_p[k] + adj_cell->robin[(k + 2) % 4];
     }
 }
 
@@ -218,7 +264,7 @@ void cell_p_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x
     for (k = 0; k < 4; k ++) {
         if (k != boundary_side) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-            cur_cell->l_p[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] +
+            cur_cell->l_p[k] = cur_cell->beta[k] * cur_cell->flux_p[k] +
                                 adj_cell->robin[(k + 2) % 4];
         }
     }
@@ -261,7 +307,7 @@ void cell_p_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
     for (k = 0; k < 4; k ++) {
         if ((k != boundary_side1) && (k != boundary_side2)) {
             adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-            cur_cell->l_p[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] +
+            cur_cell->l_p[k] = cur_cell->beta[k] * cur_cell->flux_p[k] +
                                 adj_cell->robin[(k + 2) % 4];
         }
     }

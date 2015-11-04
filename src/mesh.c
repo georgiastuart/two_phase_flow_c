@@ -6,6 +6,19 @@
 #include "mpi.h"
 #include "cell_functions.h"
 
+/* Computes beta and A at all mesh points */
+void mesh_compute_beta_A(mesh_t *mesh, const cell_ops_t *cell_ops)
+{
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cell_ops->cell_compute_beta(mesh, i, j, mesh->global.beta_coef);
+            cell_ops->cell_compute_A(mesh, i, j);
+        }
+    }
+}
+
+
+
 /* Sets up the mesh with cell structs at each gridpoint */
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config)
 {
@@ -27,6 +40,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     mesh->global.visc_o = config->visc_o;
     mesh->global.visc_w = config->visc_w;
     mesh->global.eta = config->eta;
+    mesh->global.beta_coef = config->beta_coef;
 
     /* Sets cell permeability and sources */
     for (i = 0; i < (mesh->dim.ydim + 2); i++) {
@@ -35,16 +49,12 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
             cur_cell->perm = config->perm_scale * exp(config->perm_strength
                     * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
+            cur_cell->saturation = config->sat_rel_w + 0.01;
         }
     }
 
     /* Computes beta and A at all mesh points */
-    for (i = 0; i < mesh->dim.ydim; i++) {
-        for (j = 0; j < mesh->dim.xdim; j++) {
-            cell_p_compute_beta(mesh, i, j, config->beta_coef);
-            cell_p_compute_A(mesh, i, j);
-        }
-    }
+    mesh_compute_beta_A(mesh, &cell_p_ops);
 
     return mesh;
 }
@@ -267,7 +277,7 @@ void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_
 
 /* Checks for convergence at a specified cutoff. Returns 1 if relative error */
 /* is less than the convergence cutoff, 0 otherwise */
-int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
+int mesh_p_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
 {
     int i, j;
     double num, denom, p_new, p_old, rel_error, global_num, global_denom;
@@ -302,7 +312,7 @@ int mesh_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, i
 }
 
 /* Ensures the average pressure is 0 */
-void mesh_impose_0_average(mesh_t *mesh, int rank)
+void mesh_p_impose_0_average(mesh_t *mesh, int rank)
 {
     int N, i, j, k;
     double sum, global_sum, avg;
@@ -338,18 +348,11 @@ void mesh_impose_0_average(mesh_t *mesh, int rank)
 }
 
 /* Updates the robin conditions along the boundaries */
-void mesh_p_update_robin(mesh_t *mesh)
+void mesh_update_robin(mesh_t *mesh, const cell_ops_t *cell_ops)
 {
-    int i, j, k;
-    cell_t *cur_cell;
-
-    for (i = 0; i < mesh->dim.ydim; i++) {
-        for (j = 0; j < mesh->dim.xdim; j++) {
-            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
-
-            for (k = 0; k < 4; k++) {
-                cur_cell->robin[k] = cur_cell->beta_p[k] * cur_cell->flux_p[k] + cur_cell->l_p[k];
-            }
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cell_ops->cell_compute_robin(mesh, i, j);
         }
     }
 }
@@ -376,19 +379,20 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int itr = 0;
     mesh_t *temp;
 
-    mesh_p_update_robin(mesh);
+    mesh_compute_beta_A(mesh, &cell_p_ops);
+    mesh_update_robin(mesh, &cell_p_ops);
 
     for (;;) {
         itr++;
 
         mesh_update(mesh, mesh_old, block_type, &cell_p_ops);
 
-        if (mesh_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
+        if (mesh_p_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
             break;
         }
 
-        mesh_impose_0_average(mesh, rank);
-        mesh_p_update_robin(mesh);
+        mesh_p_impose_0_average(mesh, rank);
+        mesh_update_robin(mesh, &cell_p_ops);
         mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
 
         temp = mesh;
@@ -397,4 +401,20 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     }
 
     return itr;
+}
+
+int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
+    int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
+{
+    int itr = 0;
+    mesh_t *temp;
+
+    /* Computes diffusion D at all mesh points */
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+
+        }
+    }
+
+    return 0;
 }
