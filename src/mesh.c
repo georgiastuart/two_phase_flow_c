@@ -311,6 +311,41 @@ int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cut
     }
 }
 
+/* Checks for convergence at a specified cutoff. Returns 1 if relative error */
+/* is less than the convergence cutoff, 0 otherwise */
+int mesh_diff_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank)
+{
+    double num, denom, s_new, s_old, rel_error, global_num, global_denom;
+
+    num = 0;
+    denom = 0;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            s_new = mesh->cell[MESH_INDEX(i, j)].saturation;
+            s_old = mesh_old->cell[MESH_INDEX(i, j)].saturation;
+            num += pow(s_new - s_old, 2);
+            denom += pow(s_new, 2);
+        }
+    }
+
+    MPI_Reduce(&num, &global_num, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&denom, &global_denom, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        rel_error = sqrt(global_num / global_denom);
+    }
+
+    MPI_Bcast(&rel_error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (rel_error < conv_cutoff) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 /* Ensures the average pressure is 0 */
 void mesh_press_impose_0_average(mesh_t *mesh, int rank)
 {
@@ -403,18 +438,87 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     return itr;
 }
 
+/* Computes diffusion D at all mesh points */
+void mesh_compute_diffusion_coef(mesh_t *mesh)
+{
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            diff_compute_diffusion(mesh, i, j);
+        }
+    }
+}
+
 int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
     int itr = 0;
     mesh_t *temp;
 
-    /* Computes diffusion D at all mesh points */
-    for (int i = 0; i < mesh->dim.ydim; i++) {
-        for (int j = 0; j < mesh->dim.xdim; j++) {
+    mesh_compute_beta_A(mesh, &cell_diff_ops);
+    mesh_update_robin(mesh, &cell_diff_ops);
 
+    mesh_compute_diffusion_coef(mesh);
+
+    for (;;) {
+        itr++;
+
+        mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
+
+        if (mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
+            break;
         }
+
+        mesh_update_robin(mesh, &cell_diff_ops);
+        mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
+
+        temp = mesh;
+        mesh = mesh_old;
+        mesh_old = temp;
     }
 
-    return 0;
+    return itr;
+}
+
+void setup_diffusion_test(mesh_t *mesh)
+{
+    cell_t *cur_cell;
+    double x;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            x = mesh->dim.xlen / mesh->dim.x_full_dim;
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+            cur_cell->saturation = sin(M_PI * x * j);
+            cur_cell->saturation_prev = cur_cell->saturation;
+        }
+    }
+}
+
+void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
+{
+    int i, j;
+
+    /* Updates the corners */
+    diff_update_corner_dirichlet(mesh, mesh_old, 0, 0, 0, 3);
+    diff_update_corner_dirichlet(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
+    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
+    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
+
+    /* Updates the boundaries */
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
+        diff_update_boundary_dirichlet(mesh, mesh_old, i, 0, 3);
+        diff_update_boundary_dirichlet(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+    }
+
+    for (i = 1; i < (mesh->dim.xdim - 1); i++) {
+        diff_update_boundary(mesh, mesh_old, 0, i, 0);
+        diff_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+    }
+
+    /* Updates the interior cells */
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 1; j < (mesh->dim.xdim - 1); j++) {
+            diff_update_interior(mesh, mesh_old, i, j);
+        }
+    }
 }

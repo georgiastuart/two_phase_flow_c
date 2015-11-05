@@ -24,10 +24,16 @@ typedef struct mesh
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config);
 void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
 int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
+int mesh_diff_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
 void mesh_press_impose_0_average(mesh_t *mesh, int rank);
 void mesh_update_robin(mesh_t *mesh, const cell_ops_t *cell_ops);
 void mesh_compute_velocity(mesh_t *mesh);
 int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
+int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
+    int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
+
+/* For diffusion test only */
+void setup_diffusion_test(mesh_t *mesh);
 
 #endif /* H_MESH */

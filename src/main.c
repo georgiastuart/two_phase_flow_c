@@ -65,23 +65,27 @@ int main(int argc, char* argv[])
         printf("Running iterations...\n");
     }
 
-    /* Iteration of the pressure problem */
-    int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
-                block_type, rank, &send_vec, &rec_vec);
+    /* Sets up mesh for diffusion test */
+    setup_diffusion_test(&mesh);
+    setup_diffusion_test(&mesh_old);
 
+    // /* Iteration of the pressure problem */
+    // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+    //             block_type, rank, &send_vec, &rec_vec);
+    //
+    //
+    // if (is_master) {
+    //     t1 = MPI_Wtime();
+    //     printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
+    // }
 
-    if (is_master) {
-        t1 = MPI_Wtime();
-        printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
-    }
+    // /* Computes velocity */
+    // mesh_compute_velocity(mesh);
 
-    /* Computes velocity */
-    mesh_compute_velocity(mesh);
-
-    /* Writes out data to binaries */
-    write_data(mesh, &config, size, rank, "pressure");
-    write_data(mesh, &config, size, rank, "velocity_y");
-    write_data(mesh, &config, size, rank, "velocity_x");
+    // /* Writes out data to binaries */
+    // write_data(mesh, &config, size, rank, "pressure");
+    // write_data(mesh, &config, size, rank, "velocity_y");
+    // write_data(mesh, &config, size, rank, "velocity_x");
 
 
     /* Shuts down MPI and frees memory */
