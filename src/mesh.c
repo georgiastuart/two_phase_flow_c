@@ -448,6 +448,35 @@ void mesh_compute_diffusion_coef(mesh_t *mesh)
     }
 }
 
+void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
+{
+    int i, j;
+
+    /* Updates the corners */
+    diff_update_corner_dirichlet(mesh, mesh_old, 0, 0, 0, 3);
+    diff_update_corner_dirichlet(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
+    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
+    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
+
+    /* Updates the boundaries */
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
+        diff_update_boundary_dirichlet(mesh, mesh_old, i, 0, 3);
+        diff_update_boundary_dirichlet(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
+    }
+
+    for (i = 1; i < (mesh->dim.xdim - 1); i++) {
+        diff_update_boundary(mesh, mesh_old, 0, i, 0);
+        diff_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
+    }
+
+    /* Updates the interior cells */
+    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
+        for (j = 1; j < (mesh->dim.xdim - 1); j++) {
+            diff_update_interior(mesh, mesh_old, i, j);
+        }
+    }
+}
+
 int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
@@ -462,7 +491,8 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     for (;;) {
         itr++;
 
-        mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
+        diffusion_test_update(mesh, mesh_old);
+        // mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
 
         if (mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
             break;
@@ -490,35 +520,6 @@ void setup_diffusion_test(mesh_t *mesh)
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
             cur_cell->saturation = sin(M_PI * x * j);
             cur_cell->saturation_prev = cur_cell->saturation;
-        }
-    }
-}
-
-void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
-{
-    int i, j;
-
-    /* Updates the corners */
-    diff_update_corner_dirichlet(mesh, mesh_old, 0, 0, 0, 3);
-    diff_update_corner_dirichlet(mesh, mesh_old, 0, mesh->dim.xdim - 1, 0, 1);
-    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, 0, 2, 3);
-    diff_update_corner_dirichlet(mesh, mesh_old, mesh->dim.ydim - 1, mesh->dim.xdim - 1, 2, 1);
-
-    /* Updates the boundaries */
-    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
-        diff_update_boundary_dirichlet(mesh, mesh_old, i, 0, 3);
-        diff_update_boundary_dirichlet(mesh, mesh_old, i, mesh->dim.xdim - 1, 1);
-    }
-
-    for (i = 1; i < (mesh->dim.xdim - 1); i++) {
-        diff_update_boundary(mesh, mesh_old, 0, i, 0);
-        diff_update_boundary(mesh, mesh_old, mesh->dim.ydim - 1, i, 2);
-    }
-
-    /* Updates the interior cells */
-    for (i = 1; i < (mesh->dim.ydim - 1); i++) {
-        for (j = 1; j < (mesh->dim.xdim - 1); j++) {
-            diff_update_interior(mesh, mesh_old, i, j);
         }
     }
 }

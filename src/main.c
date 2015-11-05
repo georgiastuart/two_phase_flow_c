@@ -66,18 +66,21 @@ int main(int argc, char* argv[])
     }
 
     /* Sets up mesh for diffusion test */
-    setup_diffusion_test(&mesh);
-    setup_diffusion_test(&mesh_old);
+    setup_diffusion_test(mesh);
+    setup_diffusion_test(mesh_old);
+    write_data(mesh, &config, size, rank, "saturation");
+    int itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
+                    rank, &send_vec, &rec_vec);
 
     // /* Iteration of the pressure problem */
     // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
     //             block_type, rank, &send_vec, &rec_vec);
     //
     //
-    // if (is_master) {
-    //     t1 = MPI_Wtime();
-    //     printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
-    // }
+    if (is_master) {
+        t1 = MPI_Wtime();
+        printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
+    }
 
     // /* Computes velocity */
     // mesh_compute_velocity(mesh);
