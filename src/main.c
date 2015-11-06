@@ -71,7 +71,6 @@ int main(int argc, char* argv[])
     write_data(mesh, &config, size, rank, "saturation");
     int itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                     rank, &send_vec, &rec_vec);
-
     // /* Iteration of the pressure problem */
     // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
     //             block_type, rank, &send_vec, &rec_vec);

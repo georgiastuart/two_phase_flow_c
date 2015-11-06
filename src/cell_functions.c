@@ -113,6 +113,8 @@ void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
     pc_deriv = cap_pressure_deriv(cur_cell, &mesh->global);
 
     cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
+	printf("total_mob (%d, %d): %e\n", cur_y, cur_x, total_mob);
+	printf("sat (%d, %d): %e\n", cur_y, cur_x, cur_cell->saturation);
 }
 
 /* Combutes beta at the current cell for diffusion problem */
