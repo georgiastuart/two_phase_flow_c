@@ -483,10 +483,13 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int itr = 0;
     mesh_t *temp;
 
-    mesh_compute_diffusion_coef(mesh);
+    // mesh_compute_diffusion_coef(mesh);
 
     mesh_compute_beta_A(mesh, &cell_diff_ops);
     mesh_update_robin(mesh, &cell_diff_ops);
+
+    mesh_compute_beta_A(mesh_old, &cell_diff_ops);
+    mesh_update_robin(mesh_old, &cell_diff_ops);
 
     for (;;) {
         itr++;
@@ -515,14 +518,16 @@ void setup_diffusion_test(mesh_t *mesh)
     double delta_x = mesh->dim.xlen / mesh->dim.xdim;
     double x;
 
+    mesh->global.porosity = 1;
+    mesh->dim.dt = mesh->dim.h;
+
     for (int i = 0; i < mesh->dim.ydim; i++) {
         for (int j = 0; j < mesh->dim.xdim; j++) {
             x = delta_x * j;
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
-            cur_cell->saturation = sin(M_PI * x) + 0.5 * sin(3.0 * M_PI * x);
-            cur_cell->saturation_prev = cur_cell->saturation;
-
-            printf("At (%d, %d), x = %e, sat = %e\n", i, j, x, cur_cell->saturation);
+            cur_cell->saturation = 0;
+            cur_cell->saturation_prev = sin(M_PI * x) + 0.5 * sin(3.0 * M_PI * x);
+            cur_cell->diffusion = 1;
         }
     }
 }

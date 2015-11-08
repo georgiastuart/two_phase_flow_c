@@ -113,20 +113,25 @@ void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
     pc_deriv = cap_pressure_deriv(cur_cell, &mesh->global);
 
     cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
-	printf("total_mob (%d, %d): %e\n", cur_y, cur_x, total_mob);
-	printf("sat (%d, %d): %e\n", cur_y, cur_x, cur_cell->saturation);
 }
 
 /* Combutes beta at the current cell for diffusion problem */
 void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 {
 	cell_t *cur_cell, *adj_cell;
+	double diff_eff;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
 	for (int k = 0; k < 4; k++) {
 		adj_cell = &mesh->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
-		cur_cell->beta[k] = 2 / (1 / cur_cell->diffusion + 1 / adj_cell->diffusion);
+		if (adj_cell->diffusion == 0) {
+			cur_cell->beta[k] = 0;
+		} else {
+			diff_eff = 2 * adj_cell->diffusion * cur_cell->diffusion;
+			diff_eff /= (adj_cell->diffusion + cur_cell->diffusion);
+			cur_cell->beta[k] = beta_coef * mesh->dim.h / diff_eff;
+		}
 	}
 }
 
@@ -196,10 +201,10 @@ void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x)
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-    xi = - 2 * cur_cell->diffusion / mesh->dim.h;
+    xi = 2 * cur_cell->diffusion / mesh->dim.h;
 
     for (int k = 0; k < 4; k++) {
-        cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
+        cur_cell->A_d[k] = xi / (1 + cur_cell->beta[k] * xi);
     }
 }
 
@@ -247,7 +252,7 @@ void diff_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh_old->cell[MESH_INDEX(cur_y, cur_x)];
 
 	sum_A = 0;
 	sum_A_R = 0;
@@ -331,7 +336,7 @@ void diff_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh_old->cell[MESH_INDEX(cur_y, cur_x)];
 
 	sum_A = 0;
 	sum_A_R = 0;
@@ -421,7 +426,7 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	double A, sum_A, sum_A_R, num, denom, phi_h_dt;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh_old->cell[MESH_INDEX(cur_y, cur_x)];
 
 	sum_A = 0;
 	sum_A_R = 0;
@@ -468,12 +473,12 @@ void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	double A, sum_A, sum_A_R, num, denom, phi_h_dt, xi;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh_old->cell[MESH_INDEX(cur_y, cur_x)];
 
 	sum_A = 0;
 	sum_A_R = 0;
 
-	xi = 2 * cur_cell->perm / mesh->dim.h;
+	xi = 2 * cur_cell->diffusion / mesh->dim.h;
 
 	/* Updates saturation for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {
@@ -517,12 +522,12 @@ void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	double A, sum_A, sum_A_R, num, denom, phi_h_dt, xi;
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh_old->cell[MESH_INDEX(cur_y, cur_x)];
 
 	sum_A = 0;
 	sum_A_R = 0;
 
-	xi = 2 * cur_cell->perm / mesh->dim.h;
+	xi = 2 * cur_cell->diffusion / mesh->dim.h;
 
 	/* Updates saturation for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {

@@ -17,7 +17,7 @@ typedef struct config
 {
     int xdim, ydim;
     double xlen, ylen;
-    char perm_file[100], src_file[100], pressure_out[100], velocity_y_out[100]; 
+    char perm_file[100], src_file[100], pressure_out[100], velocity_y_out[100];
     char velocity_x_out[100], saturation_out[100];
     double perm_scale, perm_strength, conv_cutoff, beta_coef;
     int num_processes, num_subdomains_x, num_subdomains_y;
@@ -30,5 +30,6 @@ double* read_file(const char* file_name, int ydim, int xdim);
 double* read_file_pad(const char* file_name, int ydim, int xdim);
 void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,
                     int num_subdomains_x, int size, const char* mode);
+void print_attribute(mesh_t *mesh, char *attribute);
 
 #endif /* H_UTIL */

@@ -68,9 +68,10 @@ int main(int argc, char* argv[])
     /* Sets up mesh for diffusion test */
     setup_diffusion_test(mesh);
     setup_diffusion_test(mesh_old);
-    write_data(mesh, &config, size, rank, "saturation");
+
     int itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                     rank, &send_vec, &rec_vec);
+
     // /* Iteration of the pressure problem */
     // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
     //             block_type, rank, &send_vec, &rec_vec);
@@ -88,6 +89,7 @@ int main(int argc, char* argv[])
     // write_data(mesh, &config, size, rank, "pressure");
     // write_data(mesh, &config, size, rank, "velocity_y");
     // write_data(mesh, &config, size, rank, "velocity_x");
+    write_data(mesh, &config, size, rank, "saturation");
 
 
     /* Shuts down MPI and frees memory */
