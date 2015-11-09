@@ -1,9 +1,12 @@
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
+import ConfigParser
 
 if __name__ == '__main__':
-    dim = 64
+    config = ConfigParser.ConfigParser()
+    config.read('input/config.ini')
+    dim = float(config.get('dimensions', 'xdim'))
     h = 1/dim
 
     print h

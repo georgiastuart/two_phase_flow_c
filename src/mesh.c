@@ -6,6 +6,12 @@
 #include "mpi.h"
 #include "cell_functions.h"
 
+/* Calculate dt*/
+double mesh_compute_dt(mesh_t *mesh)
+{
+    return mesh->dim.h;
+}
+
 /* Computes beta and A at all mesh points */
 void mesh_compute_beta_A(mesh_t *mesh, const cell_ops_t *cell_ops)
 {
@@ -16,8 +22,6 @@ void mesh_compute_beta_A(mesh_t *mesh, const cell_ops_t *cell_ops)
         }
     }
 }
-
-
 
 /* Sets up the mesh with cell structs at each gridpoint */
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config)
@@ -32,6 +36,9 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
 
     /* Sets the mesh dimensions */
     mesh->dim = dim;
+
+    /* Sets dt */
+    mesh->dim.dt = mesh_compute_dt(mesh);
 
     /* Sets global parameters */
     mesh->global.porosity = config->porosity;
@@ -501,6 +508,10 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
             break;
         }
 
+        if (!(itr % 100)) {
+            printf("Iteration: %d\n", itr);
+        }
+
         mesh_update_robin(mesh, &cell_diff_ops);
         mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
 
@@ -519,7 +530,6 @@ void setup_diffusion_test(mesh_t *mesh)
     double x;
 
     mesh->global.porosity = 1;
-    mesh->dim.dt = mesh->dim.h;
 
     for (int i = 0; i < mesh->dim.ydim; i++) {
         for (int j = 0; j < mesh->dim.xdim; j++) {

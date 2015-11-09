@@ -64,6 +64,7 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
     int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
     int transmit_len;
     double *transmit, *full_param;
+    MPI_Request request = MPI_REQUEST_NULL;
 
     xdim_per_block = config->xdim / config->num_subdomains_x;
     ydim_per_block = config->ydim / config->num_subdomains_y;
@@ -96,11 +97,9 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
                                 (j + x_block_loc * xdim_per_block), (config->xdim + 2))];
                 }
             }
-
-            MPI_Send(transmit, transmit_len, MPI_DOUBLE, k, 0, MPI_COMM_WORLD);
+            MPI_Isend(transmit, transmit_len, MPI_DOUBLE, k, 0, MPI_COMM_WORLD, &request);
         }
     }
-
     MPI_Recv(*out_param, transmit_len, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     free(transmit);
     free(full_param);
