@@ -41,6 +41,9 @@ static int config_helper(void *config, const char *section, const char *name,
     } else if (MATCH("dimensions", "ylen")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->ylen = d;
+    } else if (MATCH("dimensions", "time_steps")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->time_steps = d;
     } else if (MATCH("files","perm_file")) {
         strcpy(pconfig->perm_file, value);
     } else if (MATCH("files","src_file")) {

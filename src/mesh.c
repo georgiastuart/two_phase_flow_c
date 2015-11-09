@@ -9,7 +9,7 @@
 /* Calculate dt*/
 double mesh_compute_dt(mesh_t *mesh)
 {
-    return mesh->dim.h;
+    return mesh->dim.h / 2;
 }
 
 /* Computes beta and A at all mesh points */
@@ -521,6 +521,21 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     }
 
     return itr;
+}
+
+/* Sets saturation_prev to saturation */
+void update_saturation_time(mesh_t *mesh, mesh_t *mesh_old)
+{
+    cell_t *cur_cell, *cur_cell_old;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+            cur_cell_old = &mesh_old->cell[MESH_INDEX(i, j)];
+            cur_cell->saturation_prev = cur_cell->saturation;
+            cur_cell_old->saturation_prev = cur_cell->saturation;
+        }
+    }
 }
 
 void setup_diffusion_test(mesh_t *mesh)

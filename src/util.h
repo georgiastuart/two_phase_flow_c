@@ -15,7 +15,7 @@ typedef struct dim
 
 typedef struct config
 {
-    int xdim, ydim;
+    int xdim, ydim, time_steps;
     double xlen, ylen;
     char perm_file[100], src_file[100], pressure_out[100], velocity_y_out[100];
     char velocity_x_out[100], saturation_out[100];

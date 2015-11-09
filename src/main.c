@@ -72,8 +72,18 @@ int main(int argc, char* argv[])
     setup_diffusion_test(mesh);
     setup_diffusion_test(mesh_old);
 
-    int itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
+    int itr;
+
+    for (int i = 0; i < config.time_steps; i++) {
+        itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                                        rank, &send_vec, &rec_vec);
+
+        update_saturation_time(mesh, mesh_old);
+
+        temp = mesh;
+        mesh = mesh_old;
+        mesh_old = temp;
+    }
 
     // /* Iteration of the pressure problem */
     // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
