@@ -366,7 +366,7 @@ void diff_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 		}
 	}
 
-	/* Updates the pressure at the edges of the current cell in the new mesh */
+	/* Updates the saturation at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
 		if (k != boundary_side) {
 	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
@@ -456,7 +456,7 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 		}
 	}
 
-	/* Updates the pressure at the edges of the current cell in the new mesh */
+	/* Updates the saturation at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
 		if ((k != boundary_side1) && (k != boundary_side2)) {
 	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
@@ -505,7 +505,7 @@ void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 		}
 	}
 
-	/* Updates the pressure at the edges of the current cell in the new mesh */
+	/* Updates the saturation at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
 		if (k != boundary_side) {
 	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
@@ -554,7 +554,7 @@ void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 		}
 	}
 
-	/* Updates the pressure at the edges of the current cell in the new mesh */
+	/* Updates the saturation at the edges of the current cell in the new mesh */
     for (k = 0; k < 4; k ++) {
 		if ((k != boundary_side1) && (k != boundary_side2)) {
 	        adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
