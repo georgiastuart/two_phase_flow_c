@@ -67,6 +67,9 @@ void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2);
 
+/* Transport functions */
+double get_average_sat(mesh_t *mesh, int cur_y, int cur_x, double y_comp, double x_comp);
+
 /* For Diffusion test */
 void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	int cur_x, int boundary_side1, int boundary_side2);
