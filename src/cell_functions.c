@@ -42,6 +42,23 @@ int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
     return 0;
 }
 
+/* Retrieves the cell diagonal to the current cell */
+/* 0 - up left, 1 - up right, 2 - down right, 3 - down left */
+int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
+{
+	switch (direction) {
+		case 0:
+			return MESH_INDEX((cur_y - 1), (cur_x - 1));
+		case 1:
+			return MESH_INDEX((cur_y - 1), (cur_x + 1));
+		case 2:
+			return MESH_INDEX((cur_y + 1), (cur_x + 1));
+		case 3:
+			return MESH_INDEX((cur_y + 1), (cur_x - 1));
+	}
+	return 0;
+}
+
 /* Relative permeability of the oil phase, K_ro */
 static double rel_perm_o(cell_t *cell, global_mesh_params_t *global)
 {
