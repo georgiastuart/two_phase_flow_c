@@ -562,8 +562,8 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
 
     MPI_Allreduce(&max, &global_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    mesh->dim.dt_transport = (0.95 * mesh->dim.dt) / global_max;
-    mesh_old->dim.dt_transport = (0.95 * mesh->dim.dt) / global_max;
+    mesh->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
+    mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
 }
 
 void setup_diffusion_test(mesh_t *mesh)
