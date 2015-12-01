@@ -36,6 +36,7 @@ extern const cell_ops_t cell_press_ops, cell_diff_ops;
 
 /* Gets adjacent mesh index */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
+int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 
 /* Parameter calculations. Note: relative permeability functions are static */
 double total_mobility(cell_t *cell, global_mesh_params_t *global);

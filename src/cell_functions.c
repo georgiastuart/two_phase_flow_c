@@ -482,8 +482,33 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	}
 }
 
+/* Returns the average saturation at t_old for the transport method of characteristics */
+double get_average_sat(mesh_t *mesh, int cur_y, int cur_x, double y_comp,
+					   double x_comp)
+{
+	cell_t *cur_cell, *adj_cell_vert, *adj_cell_hor, *adj_cell_diag;
+
+	/* Finds the sign for the x and y components */
+	double sign_y = copysign(1.0, y_comp), sign_x = copysign(1.0, x_comp);
+
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	/* Sets components to proportions of full cell */
+	y_comp /= mesh->dim.h;
+	x_comp /= mesh->dim.h;
+
+	/* Selects the configuration of cells */
+	if ((sign_y == 1.0) && (sign_x == -1.0)) {
+		adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
+		adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
+		adj_cell_diag = &mesh->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+	}
+
+}
+
+/* Boundary update for the diffusion test problem */
 void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
-	int cur_x, int boundary_side)
+									int cur_x, int boundary_side)
 {
 	int k;
 	cell_t *cur_cell, *cur_cell_old, *adj_cell;
@@ -531,6 +556,7 @@ void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	}
 }
 
+/* Corner update for the diffusion test problem */
 void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	int cur_x, int boundary_side1, int boundary_side2)
 {
