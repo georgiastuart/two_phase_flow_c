@@ -415,6 +415,7 @@ void mesh_compute_velocity(mesh_t *mesh)
     }
 }
 
+/* For the pressure step in the flow problem */
 int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
@@ -442,6 +443,8 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         mesh_old = temp;
     }
 
+    mesh_compute_velocity(mesh);
+
     return itr;
 }
 
@@ -455,6 +458,7 @@ void mesh_compute_diffusion_coef(mesh_t *mesh)
     }
 }
 
+/* Only for the diffusion test */
 void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
 {
     int i, j;
@@ -484,13 +488,14 @@ void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
     }
 }
 
+/* For diffusion step in the flow problem */
 int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
     int itr = 0;
     mesh_t *temp;
 
-    // mesh_compute_diffusion_coef(mesh);
+    mesh_compute_diffusion_coef(mesh);
 
     mesh_compute_beta_A(mesh, &cell_diff_ops);
     mesh_update_robin(mesh, &cell_diff_ops);
@@ -501,8 +506,8 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     for (;;) {
         itr++;
 
-        diffusion_test_update(mesh, mesh_old);
-        // mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
+        // diffusion_test_update(mesh, mesh_old);
+        mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
 
         if (mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
             break;
@@ -524,7 +529,7 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 }
 
 /* Sets saturation_prev to saturation */
-void update_saturation_time(mesh_t *mesh, mesh_t *mesh_old)
+void mesh_update_saturation_time(mesh_t *mesh, mesh_t *mesh_old)
 {
     cell_t *cur_cell, *cur_cell_old;
 
@@ -536,6 +541,29 @@ void update_saturation_time(mesh_t *mesh, mesh_t *mesh_old)
             cur_cell_old->saturation_prev = cur_cell->saturation;
         }
     }
+}
+
+/* Finds the maxiumum time step for transport */
+void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
+{
+    double max = 0, mult = 0, vel_norm = 0, global_max = 0;
+    cell_t *cur_cell;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
+            vel_norm = sqrt(pow(cur_cell->velocity_x, 2) + pow(cur_cell->velocity_y, 2));
+            mult = phase_mobility_w(cur_cell, &mesh_old->global) * vel_norm;
+
+            if (mult > max)
+                max = mult;
+        }
+    }
+
+    MPI_Allreduce(&max, &global_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+    mesh->dim.dt_transport = (0.95 * mesh->dim.dt) / global_max;
+    mesh_old->dim.dt_transport = (0.95 * mesh->dim.dt) / global_max;
 }
 
 void setup_diffusion_test(mesh_t *mesh)

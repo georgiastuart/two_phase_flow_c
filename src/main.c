@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
         itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                                        rank, &send_vec, &rec_vec);
 
-        update_saturation_time(mesh, mesh_old);
+        mesh_update_saturation_time(mesh, mesh_old);
 
         temp = mesh;
         mesh = mesh_old;

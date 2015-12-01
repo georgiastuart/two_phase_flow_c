@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stddef.h>
 #include "mpi_util.h"
 #include "mesh.h"
 

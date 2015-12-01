@@ -6,6 +6,9 @@
 struct mesh;
 typedef struct mesh mesh_t;
 
+struct global_mesh_params;
+typedef struct global_mesh_params global_mesh_params_t;
+
 typedef struct cell
 {
     /* Values that live at the center of each cell */
@@ -15,7 +18,7 @@ typedef struct cell
     double flux_p[4], l_p[4], beta[4], robin[4], A_p[4];
     double flux_d[4], l_d[4], beta_d[4], A_d[4];
 
-    /* Final velocity data */
+    /* Velocity data */
     double velocity_y, velocity_x;
 } cell_t;
 
@@ -33,6 +36,12 @@ extern const cell_ops_t cell_press_ops, cell_diff_ops;
 
 /* Gets adjacent mesh index */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
+
+/* Parameter calculations. Note: relative permeability functions are static */
+double total_mobility(cell_t *cell, global_mesh_params_t *global);
+double phase_mobility_o(cell_t *cell, global_mesh_params_t *global);
+double phase_mobility_w(cell_t *cell, global_mesh_params_t *global);
+double cap_pressure_deriv(cell_t *cell, global_mesh_params_t *global);
 
 /* Beta, Robin, and A cell calculations */
 void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
