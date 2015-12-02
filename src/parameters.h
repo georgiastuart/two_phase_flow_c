@@ -11,6 +11,7 @@ typedef struct global_mesh_params global_mesh_params_t;
 double total_mobility(cell_t *cell, global_mesh_params_t *global);
 double phase_mobility_o(cell_t *cell, global_mesh_params_t *global);
 double phase_mobility_w(cell_t *cell, global_mesh_params_t *global);
+double phase_mobility_w_deriv(cell_t *cell, global_mesh_params_t *global);
 double cap_pressure_deriv(cell_t *cell, global_mesh_params_t *global);
 
 #endif /* H_PARAMETERS */
