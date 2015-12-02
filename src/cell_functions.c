@@ -25,6 +25,15 @@ const cell_ops_t cell_diff_ops = {
 	.cell_compute_robin		= &diff_compute_robin
 };
 
+const cell_ops_t cell_trans_ops = {
+	.cell_compute_beta		= NULL,
+	.cell_compute_A			= NULL,
+	.cell_update_interior	= &trans_update_interior,
+	.cell_update_boundary	= &trans_update_boundary,
+	.cell_update_corner		= &trans_update_corner,
+	.cell_compute_robin		= NULL
+};
+
 /* Retrieves the cell adjacent to the current cell */
 /* 0 - up, 1 - right,  2 - down, 3 - left */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x)

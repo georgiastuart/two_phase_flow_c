@@ -566,6 +566,34 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
     mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
 }
 
+/* Time step for the transport problem */
+int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int rank,
+            send_vectors_t *send_vec, receive_vectors_t *rec_vec)
+{
+    mesh_t *temp;
+    double dtt = mesh->dim.dt_transport;
+
+    /* Computes dt_transport for both meshes */
+    mesh_max_time_step(mesh, mesh_old);
+    int num_ts = (int) (mesh->dim.dt / dtt) + 1;
+    double remainder_ts = mesh->dim.dt - ((double) num_ts * dtt);
+
+    for (int i = 0; i < (num_ts - 1); i++) {
+        mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
+
+        temp = mesh;
+        mesh = mesh_old;
+        mesh_old = temp;
+    }
+
+    mesh->dim.dt_transport = remainder_ts;
+    mesh_old->dim.dt_transport = remainder_ts;
+
+    mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
+
+    return num_ts;
+}
+
 void setup_diffusion_test(mesh_t *mesh)
 {
     cell_t *cur_cell;

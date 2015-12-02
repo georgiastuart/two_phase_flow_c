@@ -33,7 +33,7 @@ typedef struct cell_ops
     void (*cell_compute_robin)();
 } cell_ops_t;
 
-extern const cell_ops_t cell_press_ops, cell_diff_ops;
+extern const cell_ops_t cell_press_ops, cell_diff_ops, cell_trans_ops;
 
 /* Gets adjacent mesh index */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
@@ -67,6 +67,8 @@ double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
 void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x);
 void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 						   int boundary_side);
+void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+                   int boundary_side1, int boundary_side2);
 
 /* For Diffusion test */
 void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
