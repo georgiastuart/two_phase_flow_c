@@ -490,6 +490,12 @@ double get_average_sat(mesh_t *mesh, int cur_y, int cur_x, double y_comp, double
 	return saturation;
 }
 
+/* Saturation update for the transport */
+void trans_sat_update(cell_t *cur_cell, double sat_old)
+{
+	
+}
+
 /* Boundary update for the diffusion test problem */
 void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 									int cur_x, int boundary_side)
