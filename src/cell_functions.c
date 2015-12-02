@@ -478,6 +478,52 @@ static int get_quadrant(double y_comp, double x_comp)
 	}
 }
 
+/* Cell duplication functions for transport step */
+static void dup_cell_hor(mesh_t *mesh, cell_t *cur_cell, cell_t **adj_cell_hor,
+						 cell_t **adj_cell_vert, cell_t **adj_cell_diag,
+						 int cur_y, int cur_x, int side_vert)
+{
+	*adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, side_vert, cur_y, cur_x)];
+	*adj_cell_hor = cur_cell;
+	*adj_cell_diag = *adj_cell_vert;
+}
+
+static void dup_cell_vert(mesh_t *mesh, cell_t *cur_cell, cell_t **adj_cell_hor,
+						 cell_t **adj_cell_vert, cell_t **adj_cell_diag,
+						 int cur_y, int cur_x, int side_hor)
+{
+	*adj_cell_vert = cur_cell;
+	*adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, side_hor, cur_y, cur_x)];
+	*adj_cell_diag = *adj_cell_hor;
+}
+
+/* Cell assignments for normal quadrants */
+static void assign_cells(mesh_t *mesh, cell_t **adj_cell_hor, cell_t **adj_cell_vert,
+						 cell_t **adj_cell_diag, int cur_y, int cur_x, int quad)
+{
+	switch (quad) {
+		case 1:
+			*adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
+			*adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
+			*adj_cell_diag = &mesh->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
+			break;
+		case 2:
+			*adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
+			*adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
+			*adj_cell_diag = &mesh->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+			break;
+		case 3:
+			*adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
+			*adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
+			*adj_cell_diag = &mesh->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
+			break;
+		default:
+			*adj_cell_vert = &mesh->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
+			*adj_cell_hor = &mesh->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
+			*adj_cell_diag = &mesh->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
+	}
+}
+
 /* Interior update for tranport step */
 void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 {
@@ -500,27 +546,7 @@ void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	int quad = get_quadrant(y_comp, x_comp);
 
 	/* Selects the configuration of cells */
-	switch (quad) {
-		case 1:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
-			break;
-		case 2:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
-			break;
-		case 3:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
-			break;
-		default:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
-	}
+	assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert, &adj_cell_diag, cur_y, cur_x, quad);
 
 	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
@@ -549,100 +575,85 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	int quad = get_quadrant(y_comp, x_comp);
 
 	/* Selects the correct configuration of adjacent cells */
+
 	switch (boundary_side) {
 		case 0:
 			switch (quad) {
 				case 1:
-					adj_cell_vert = cur_cell_old;
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = adj_cell_hor;
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+								  &adj_cell_diag, cur_y, cur_x, 1);
 					break;
 				case 2:
-					adj_cell_vert = cur_cell_old;
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = adj_cell_hor;
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							  &adj_cell_diag, cur_y, cur_x, 3);
 					break;
 				case 3:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+								 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				default:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+								 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 			}
 			break;
 		case 1:
 			switch (quad) {
 				case 1:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = cur_cell_old;
-					adj_cell_diag = adj_cell_vert;
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							  &adj_cell_diag, cur_y, cur_x, 0);
 					break;
 				case 2:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+							 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				case 3:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+							 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				default:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = cur_cell_old;
-					adj_cell_diag = adj_cell_vert;
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+						  &adj_cell_diag, cur_y, cur_x, 2);
 					break;
 			}
 			break;
 		case 2:
 			switch (quad) {
 				case 1:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+						 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				case 2:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+						 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				case 3:
-					adj_cell_vert = cur_cell_old;
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-					adj_cell_diag = adj_cell_hor;
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							  &adj_cell_diag, cur_y, cur_x, 3);
 					break;
 				default:
-					adj_cell_vert = cur_cell_old;
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = adj_cell_hor;
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							  &adj_cell_diag, cur_y, cur_x, 1);
 					break;
 			}
 			break;
 		default:
 			switch (quad) {
 				case 1:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+						 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 				case 2:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-					adj_cell_hor = cur_cell_old;
-					adj_cell_diag = adj_cell_vert;
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+						  &adj_cell_diag, cur_y, cur_x, 0);
 					break;
 				case 3:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = cur_cell_old;
-					adj_cell_diag = adj_cell_vert;
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+						  &adj_cell_diag, cur_y, cur_x, 2);
 					break;
 				default:
-					adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-					adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-					adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+						 &adj_cell_diag, cur_y, cur_x, quad);
 					break;
 			}
 			break;
@@ -674,6 +685,55 @@ static int get_corner_config(int boundary_side1, int boundary_side2)
 			return 4;
 		}
 	}
+}
+
+void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+                    int boundary_side1, int boundary_side2)
+{
+	cell_t *cur_cell, *cur_cell_old, *adj_cell_vert, *adj_cell_hor, *adj_cell_diag;
+	double y_comp, x_comp;
+
+	/* Gets the x and y components of the backwards in time vector for method */
+	/* of characteristics */
+	y_comp = trans_get_old_position(mesh_old, cur_y, cur_x, 1);
+	x_comp = trans_get_old_position(mesh_old, cur_y, cur_x, 0);
+
+	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	/* Sets components to proportions of full cell */
+	y_comp = fabs(y_comp / mesh->dim.h);
+	x_comp = fabs(x_comp / mesh->dim.h);
+
+	/* Gets the quadrant the foot is in */
+	int quad = get_quadrant(y_comp, x_comp);
+	int corner_type = get_corner_config(boundary_side1, boundary_side2);
+
+	/* Selects the configuration of cells */
+	switch (quad) {
+		case 1:
+			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
+			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
+			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
+			break;
+		case 2:
+			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
+			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
+			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+			break;
+		case 3:
+			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
+			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
+			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
+			break;
+		default:
+			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
+			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
+			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
+	}
+
+	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
 /* Boundary update for the diffusion test problem */
