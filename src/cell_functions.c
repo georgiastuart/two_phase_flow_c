@@ -59,6 +59,24 @@ int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x)
 	return 0;
 }
 
+/* Returns the position for method of characteristics calculation during transport */
+/* Direction = 0 for x, 1 for y */
+double get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
+{
+	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+
+	double pos;
+	pos = -mesh->global.porosity * phase_mobility_w_deriv(cur_cell, &mesh->global);
+	pos *= mesh->dim.dt_transport;
+
+	if (direction == 0)
+		return pos * cur_cell->velocity_x;
+	else if (direction == 1)
+		return pos * cur_cell->velocity_x;
+	else
+		return 0;
+}
+
 /* Computes diffusion at the current cell */
 void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
 {

@@ -553,7 +553,7 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
         for (int j = 0; j < mesh->dim.xdim; j++) {
             cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
             vel_norm = sqrt(pow(cur_cell->velocity_x, 2) + pow(cur_cell->velocity_y, 2));
-            mult = phase_mobility_w(cur_cell, &mesh_old->global) * vel_norm;
+            mult = phase_mobility_w_deriv(cur_cell, &mesh_old->global) * vel_norm;
 
             if (mult > max)
                 max = mult;

@@ -39,6 +39,9 @@ extern const cell_ops_t cell_press_ops, cell_diff_ops;
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 
+/* Old position for transport */
+double get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction);
+
 /* Beta, Robin, and A cell calculations */
 void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
 void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
