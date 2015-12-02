@@ -652,6 +652,30 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
+/* Corner configuration for transport corner calculation */
+/* Corners are labeled like quadrants:
+	1 - Upper right
+	2 - Upper left
+	3 - Lower left
+	4 - Lower right
+*/
+static int get_corner_config(int boundary_side1, int boundary_side2)
+{
+	if ((boundary_side1 == 0) || (boundary_side2 == 0)) {
+		if ((boundary_side1 == 3) || (boundary_side2 == 3)) {
+			return 2;
+		} else {
+			return 1;
+		}
+	} else {
+		if ((boundary_side1 == 3) || (boundary_side2 == 3)) {
+			return 3;
+		} else {
+			return 4;
+		}
+	}
+}
+
 /* Boundary update for the diffusion test problem */
 void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 									int cur_x, int boundary_side)
