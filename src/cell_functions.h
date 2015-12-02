@@ -2,6 +2,7 @@
 #define H_CELL_FUNCTIONS
 
 #include "util.h"
+#include "parameters.h"
 
 struct mesh;
 typedef struct mesh mesh_t;
@@ -37,12 +38,6 @@ extern const cell_ops_t cell_press_ops, cell_diff_ops;
 /* Gets adjacent mesh index */
 int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
-
-/* Parameter calculations. Note: relative permeability functions are static */
-double total_mobility(cell_t *cell, global_mesh_params_t *global);
-double phase_mobility_o(cell_t *cell, global_mesh_params_t *global);
-double phase_mobility_w(cell_t *cell, global_mesh_params_t *global);
-double cap_pressure_deriv(cell_t *cell, global_mesh_params_t *global);
 
 /* Beta, Robin, and A cell calculations */
 void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);

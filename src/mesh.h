@@ -8,6 +8,7 @@
 #include "util.h"
 #include "cell_functions.h"
 #include "mpi_util.h"
+#include "parameters.h"
 
 typedef struct global_mesh_params
 {
