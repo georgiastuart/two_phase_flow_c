@@ -497,6 +497,14 @@ static void dup_cell_vert(mesh_t *mesh, cell_t *cur_cell, cell_t **adj_cell_hor,
 	*adj_cell_diag = *adj_cell_hor;
 }
 
+static void dup_cell_corner(mesh_t *mesh, cell_t *cur_cell, cell_t **adj_cell_hor,
+						 cell_t **adj_cell_vert, cell_t **adj_cell_diag)
+{
+	*adj_cell_vert = cur_cell;
+	*adj_cell_hor = cur_cell;
+	*adj_cell_diag = cur_cell;
+}
+
 /* Cell assignments for normal quadrants */
 static void assign_cells(mesh_t *mesh, cell_t **adj_cell_hor, cell_t **adj_cell_vert,
 						 cell_t **adj_cell_diag, int cur_y, int cur_x, int quad)
@@ -710,26 +718,86 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	int corner_type = get_corner_config(boundary_side1, boundary_side2);
 
 	/* Selects the configuration of cells */
-	switch (quad) {
+	switch (corner_type) {
 		case 1:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 1, cur_y, cur_x)];
+			switch (quad) {
+				case 1:
+					dup_cell_corner(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+								&adj_cell_diag);
+					break;
+				case 2:
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							  	&adj_cell_diag, cur_y, cur_x, 3);
+					break;
+				case 3:
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+						 		&adj_cell_diag, cur_y, cur_x, quad);
+					break;
+				default:
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+					  			&adj_cell_diag, cur_y, cur_x, 2);
+					break;
+			}
 			break;
 		case 2:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 0, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 0, cur_y, cur_x)];
+			switch (quad) {
+				case 1:
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+						  		&adj_cell_diag, cur_y, cur_x, 1);
+					break;
+				case 2:
+					dup_cell_corner(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+								&adj_cell_diag);
+					break;
+				case 3:
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+				  				&adj_cell_diag, cur_y, cur_x, 2);
+					break;
+				default:
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+								&adj_cell_diag, cur_y, cur_x, quad);
+					break;
+			}
 			break;
 		case 3:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 3, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 3, cur_y, cur_x)];
+			switch (quad) {
+				case 1:
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, quad);
+					break;
+				case 2:
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, 0);
+					break;
+				case 3:
+					dup_cell_corner(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag);
+					break;
+				default:
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, 1);
+					break;
+			}
 			break;
 		default:
-			adj_cell_vert = &mesh_old->cell[get_adjacent_index(mesh, 2, cur_y, cur_x)];
-			adj_cell_hor = &mesh_old->cell[get_adjacent_index(mesh, 1, cur_y, cur_x)];
-			adj_cell_diag = &mesh_old->cell[get_diagonal_index(mesh, 2, cur_y, cur_x)];
+			switch (quad) {
+				case 1:
+					dup_cell_hor(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, 0);
+					break;
+				case 2:
+					assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, quad);
+					break;
+				case 3:
+					dup_cell_vert(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag, cur_y, cur_x, 3);
+					break;
+				default:
+					dup_cell_corner(mesh, cur_cell_old, &adj_cell_hor, &adj_cell_vert,
+							&adj_cell_diag);
+					break;
+			}
 	}
 
 	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
