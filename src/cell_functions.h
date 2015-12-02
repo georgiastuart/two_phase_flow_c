@@ -61,8 +61,12 @@ void press_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side1, int boundary_side2);
 
 /* Transport functions */
-double get_average_sat(mesh_t *mesh, int cur_y, int cur_x, double y_comp, double x_comp);
-double get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction);
+double trans_get_average_sat(cell_t *cur_cell, cell_t *adj_cell_hor, cell_t *adj_cell_vert,
+							 cell_t *adj_cell_diag, double y_comp, double x_comp);
+double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction);
+void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x);
+void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
+						   int boundary_side);
 
 /* For Diffusion test */
 void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
