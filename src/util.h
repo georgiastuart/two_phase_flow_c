@@ -1,7 +1,7 @@
 #ifndef H_UTIL
 #define H_UTIL
 
-#include "ini.h"
+#include "inih/ini.h"
 #include "mpi.h"
 
 struct mesh;
