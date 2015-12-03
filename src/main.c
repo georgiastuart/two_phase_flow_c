@@ -51,6 +51,9 @@ int main(int argc, char* argv[])
     /* Initializes the global dimension struct */
     init_dim(&config, &dim);
 
+    /* Sets linear or nonlinear parameters */
+    set_linearity(config.linearity);
+
     /* Initializes the meshes */
     mesh = mesh_init_mesh(dim, perm, source, &config);
     mesh_old = mesh_init_mesh(dim, perm, source, &config);
