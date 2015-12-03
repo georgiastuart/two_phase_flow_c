@@ -110,9 +110,9 @@ int main(int argc, char* argv[])
     // mesh_compute_velocity(mesh);
 
     // /* Writes out data to binaries */
-    // write_data(mesh, &config, size, rank, "pressure");
-    // write_data(mesh, &config, size, rank, "velocity_y");
-    // write_data(mesh, &config, size, rank, "velocity_x");
+    write_data(mesh, &config, size, rank, "pressure");
+    write_data(mesh, &config, size, rank, "velocity_y");
+    write_data(mesh, &config, size, rank, "velocity_x");
     write_data(mesh, &config, size, rank, "saturation");
 
 

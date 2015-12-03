@@ -559,12 +559,12 @@ void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
+	/* Gets the quadrant the foot is in */
+	int quad = get_quadrant(y_comp, x_comp);
+
 	/* Sets components to proportions of full cell */
 	y_comp = fabs(y_comp / mesh->dim.h);
 	x_comp = fabs(x_comp / mesh->dim.h);
-
-	/* Gets the quadrant the foot is in */
-	int quad = get_quadrant(y_comp, x_comp);
 
 	/* Selects the configuration of cells */
 	assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert, &adj_cell_diag, cur_y, cur_x, quad);
@@ -588,12 +588,18 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
+	/* Gets the quadrant the foot is in */
+	int quad = get_quadrant(y_comp, x_comp);
+
+	if ((cur_y == mesh->dim.ydim - 2) && (cur_x == 0)) {
+		printf("quad: %d\n", quad);
+		printf("y: %e, x: %e\n", y_comp, x_comp);
+		printf("vel y: %e, vel x: %e\n", cur_cell->velocity_y, cur_cell->velocity_x);
+	}
+
 	/* Sets components to proportions of full cell */
 	y_comp = fabs(y_comp / mesh->dim.h);
 	x_comp = fabs(x_comp / mesh->dim.h);
-
-	/* Gets the quadrant the foot is in */
-	int quad = get_quadrant(y_comp, x_comp);
 
 	/* Selects the correct configuration of adjacent cells */
 
@@ -682,6 +688,9 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 
 	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
+
+	if ((cur_y == mesh->dim.ydim - 2) && (cur_x == 0)) {
+	printf("sat: %e\n", cur_cell->saturation); }
 }
 
 /* Corner configuration for transport corner calculation */
@@ -722,13 +731,13 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
-	/* Sets components to proportions of full cell */
-	y_comp = fabs(y_comp / mesh->dim.h);
-	x_comp = fabs(x_comp / mesh->dim.h);
-
 	/* Gets the quadrant the foot is in */
 	int quad = get_quadrant(y_comp, x_comp);
 	int corner_type = get_corner_config(boundary_side1, boundary_side2);
+
+	/* Sets components to proportions of full cell */
+	y_comp = fabs(y_comp / mesh->dim.h);
+	x_comp = fabs(x_comp / mesh->dim.h);
 
 	/* Selects the configuration of cells */
 	switch (corner_type) {

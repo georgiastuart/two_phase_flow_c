@@ -25,12 +25,12 @@ typedef struct cell
 
 typedef struct cell_ops
 {
-    void (*cell_compute_beta)();
-    void (*cell_compute_A)();
-    void (*cell_update_interior)();
-    void (*cell_update_boundary)();
-    void (*cell_update_corner)();
-    void (*cell_compute_robin)();
+    void (*cell_compute_beta)(mesh_t*, int, int, double);
+    void (*cell_compute_A)(mesh_t*, int, int);
+    void (*cell_update_interior)(mesh_t*, mesh_t*, int, int);
+    void (*cell_update_boundary)(mesh_t*, mesh_t*, int, int, int);
+    void (*cell_update_corner)(mesh_t*, mesh_t*, int, int, int, int);
+    void (*cell_compute_robin)(mesh_t*, int, int);
 } cell_ops_t;
 
 extern const cell_ops_t cell_press_ops, cell_diff_ops, cell_trans_ops;

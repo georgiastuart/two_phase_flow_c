@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    dim = 64
+    dim = 8
 
     vel_y = np.reshape(np.fromfile('output/velocity_y.dat', dtype = np.float64), (dim, dim))
     vel_x = np.reshape(np.fromfile('output/velocity_x.dat', dtype = np.float64), (dim, dim))
