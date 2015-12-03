@@ -11,7 +11,7 @@
 int main(int argc, char* argv[])
 {
     double *perm, *source;
-    mesh_t *mesh, *mesh_old, *temp;
+    mesh_t *mesh, *mesh_old;
     dim_t dim;
     config_t config;
     int rank, size, block_type, is_master;
@@ -68,31 +68,39 @@ int main(int argc, char* argv[])
         printf("Running iterations...\n");
     }
 
-    /* Sets up mesh for diffusion test */
-    setup_diffusion_test(mesh);
-    setup_diffusion_test(mesh_old);
+    /* Sets up mesh for transport test */
+    setup_transport_test(mesh);
+    setup_transport_test(mesh_old);
 
-    int itr;
+    // /* Sets up mesh for diffusion test */
+    // setup_diffusion_test(mesh);
+    // setup_diffusion_test(mesh_old);
 
-    for (int i = 0; i < config.time_steps; i++) {
-        itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
-                                       rank, &send_vec, &rec_vec);
+    /* Iteration of the pressure problem */
+    int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+                block_type, rank, &send_vec, &rec_vec);
 
-        mesh_update_saturation_time(mesh, mesh_old);
-
-        temp = mesh;
-        mesh = mesh_old;
-        mesh_old = temp;
-    }
-
-    // /* Iteration of the pressure problem */
-    // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
-    //             block_type, rank, &send_vec, &rec_vec);
-    //
-    //
     if (is_master) {
         t1 = MPI_Wtime();
-        printf("Finished after %f seconds and %d iterations.\n", t1 - t2, itr);
+        printf("Pressure finished after %f seconds and %d iterations.\n", t1 - t2, itr);
+    }
+
+    itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
+
+    // for (int i = 0; i < config.time_steps; i++) {
+    //     itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
+    //                                    rank, &send_vec, &rec_vec);
+    //
+    //     mesh_update_saturation_time(mesh, mesh_old);
+    //
+    //     temp = mesh;
+    //     mesh = mesh_old;
+    //     mesh_old = temp;
+    // }
+
+    if (is_master) {
+        t2 = MPI_Wtime();
+        printf("Transport finished after %f seconds and %d iterations.\n", t2 - t1, itr);
     }
 
     // /* Computes velocity */

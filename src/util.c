@@ -20,6 +20,7 @@ void init_dim(config_t *config, dim_t *dim)
     dim->num_subdomains_x = config->num_subdomains_x;
     dim->num_subdomains_y = config->num_subdomains_y;
     dim->h = dim->xlen / dim->xdim;
+    dim->dt = config->dt;
 }
 
 /* Necessary function for the config reader */
@@ -41,6 +42,9 @@ static int config_helper(void *config, const char *section, const char *name,
     } else if (MATCH("dimensions", "ylen")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->ylen = d;
+    } else if (MATCH("dimensions", "time_step_size")) {
+        sscanf(strdup(value), "%lf", &d);
+        pconfig->dt = d;
     } else if (MATCH("dimensions", "time_steps")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->time_steps = d;

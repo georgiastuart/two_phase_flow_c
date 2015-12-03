@@ -38,8 +38,9 @@ static double rel_perm_w_deriv(cell_t *cell, global_mesh_params_t *global)
 /* Total mobility, lambda */
 double total_mobility(cell_t *cell, global_mesh_params_t *global)
 {
-    return (rel_perm_o(cell, global) / global->visc_o +
-            rel_perm_w(cell, global) / global->visc_w);
+    return 1;
+    //return (rel_perm_o(cell, global) / global->visc_o +
+    //        rel_perm_w(cell, global) / global->visc_w);
 }
 
 /* Derivative of the total mobility, lambda' */

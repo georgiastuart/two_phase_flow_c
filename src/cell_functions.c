@@ -128,15 +128,19 @@ void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
     double perm_eff;
     cell_t *cur_cell, *adj_cell;
 
+	double total_mob, adj_total_mob;
+
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
+	total_mob = total_mobility(cur_cell, &mesh->global);
 
     for (int k = 0; k < 4; k++) {
         adj_cell = &mesh->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
+		adj_total_mob = total_mobility(adj_cell, &mesh->global);
         if (adj_cell->perm == 0) {
             cur_cell->beta[k] = 0;
         } else {
-            perm_eff = 2 * adj_cell->perm * cur_cell->perm;
-            perm_eff /= (adj_cell->perm + cur_cell->perm);
+            perm_eff = 2 * adj_cell->perm * adj_total_mob * cur_cell->perm * total_mob;
+            perm_eff /= (adj_cell->perm * adj_total_mob + cur_cell->perm * total_mob);
             cur_cell->beta[k] = beta_coef * mesh->dim.h / perm_eff;
         }
 
@@ -174,7 +178,7 @@ void press_compute_A(mesh_t *mesh, int cur_y, int cur_x)
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-    xi = 2 * cur_cell->perm / mesh->dim.h;
+    xi = 2 * cur_cell->perm * total_mobility(cur_cell, &mesh->global)/ mesh->dim.h;
 
     for (int k = 0; k < 4; k++) {
         cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);

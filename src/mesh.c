@@ -37,9 +37,6 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     /* Sets the mesh dimensions */
     mesh->dim = dim;
 
-    /* Sets dt */
-    mesh->dim.dt = mesh_compute_dt(mesh);
-
     /* Sets global parameters */
     mesh->global.porosity = config->porosity;
     mesh->global.sat_rel_o = config->sat_rel_o;
@@ -445,6 +442,10 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 
     mesh_compute_velocity(mesh);
 
+    temp = mesh;
+    mesh = mesh_old;
+    mesh_old = temp;
+
     return itr;
 }
 
@@ -554,7 +555,6 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
             cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
             vel_norm = sqrt(pow(cur_cell->velocity_x, 2) + pow(cur_cell->velocity_y, 2));
             mult = phase_mobility_w_deriv(cur_cell, &mesh_old->global) * vel_norm;
-
             if (mult > max)
                 max = mult;
         }
@@ -562,6 +562,8 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
 
     MPI_Allreduce(&max, &global_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
+    printf("Global max: %e\n", global_max);
+    printf("H: %e\n", mesh->dim.h);
     mesh->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
     mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
 }
@@ -571,10 +573,11 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
             send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
     mesh_t *temp;
-    double dtt = mesh->dim.dt_transport;
 
     /* Computes dt_transport for both meshes */
     mesh_max_time_step(mesh, mesh_old);
+    double dtt = mesh->dim.dt_transport;
+    printf("trans ts = %e\n", dtt);
     int num_ts = (int) (mesh->dim.dt / dtt) + 1;
     double remainder_ts = mesh->dim.dt - ((double) num_ts * dtt);
 
@@ -611,4 +614,12 @@ void setup_diffusion_test(mesh_t *mesh)
             cur_cell->diffusion = 1;
         }
     }
+}
+
+void setup_transport_test(mesh_t *mesh)
+{
+    cell_t *cur_cell;
+
+    cur_cell = &mesh->cell[MESH_INDEX(mesh->dim.ydim - 1, 0)];
+    cur_cell->saturation = 0.85;
 }
