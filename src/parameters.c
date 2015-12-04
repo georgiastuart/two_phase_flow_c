@@ -7,33 +7,33 @@
 /* Relative permeability of the oil phase, K_ro */
 static double rel_perm_o_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    return pow(1 - (cell->saturation / (1 - global->sat_rel_o)), 2);
+    return pow(1.0 - (cell->saturation / (1.0 - global->sat_rel_o)), 2);
 }
 
 /* Relative permeability of the oil phase for linear transport */
 static double rel_perm_o_linear(cell_t *cell, global_mesh_params_t *global)
 {
-    return 1 - cell->saturation;
+    return 1.0 - cell->saturation;
 }
 
 /* Derivative of the relative permeability of oil, K_ro' */
 static double rel_perm_o_deriv_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    double denom = (1 - global->sat_rel_o);
-    return -2.0 / denom * (1 - cell->saturation / denom);
+    double denom = (1.0 - global->sat_rel_o);
+    return -2.0 / denom * (1.0 - cell->saturation / denom);
 }
 
 /* Derivative of the relative permeability of oil for linear transport */
 static double rel_perm_o_deriv_linear(cell_t *cell, global_mesh_params_t *global)
 {
-    return -1;
+    return -1.0;
 }
 
 /* Relative permeability of the water phase, K_rw */
 static double rel_perm_w_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
     double num = pow(cell->saturation - global->sat_rel_w, 2);
-    double denom = pow(1 - global->sat_rel_w, 2);
+    double denom = pow(1.0 - global->sat_rel_w, 2);
 
     return pow(num / denom, 2);
 }
@@ -47,8 +47,8 @@ static double rel_perm_w_linear(cell_t *cell, global_mesh_params_t *global)
 /* Derivative of the relative permeability of water, K_rw' */
 static double rel_perm_w_deriv_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    double num = 4 * pow(cell->saturation - global->sat_rel_w, 3);
-    double denom = pow(1 - global->sat_rel_w, 4);
+    double num = 4.0 * pow(cell->saturation - global->sat_rel_w, 3);
+    double denom = pow(1.0 - global->sat_rel_w, 4);
 
     return num / denom;
 }
@@ -56,7 +56,7 @@ static double rel_perm_w_deriv_nonlinear(cell_t *cell, global_mesh_params_t *glo
 /* Derivative of the relative permeability of water for linear transport */
 static double rel_perm_w_deriv_linear(cell_t *cell, global_mesh_params_t *global)
 {
-    return 1;
+    return 1.0;
 }
 
 /* Pointers for linear and nonlinear parameters */
