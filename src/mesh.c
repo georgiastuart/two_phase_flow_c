@@ -629,5 +629,5 @@ void setup_transport_test(mesh_t *mesh)
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX((mesh->dim.ydim - 1), 0)];
-    cur_cell->saturation = 0.85;
+    cur_cell->saturation = 0.84;
 }
