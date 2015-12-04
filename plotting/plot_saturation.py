@@ -1,8 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import ConfigParser as cfg
 
 if __name__ == '__main__':
-    dim = 8
+    parser = cfg.ConfigParser()
+    parser.read('input/config.ini')
+    dim = parser.getint('dimensions', 'xdim')
+
+    print dim
 
     saturation = np.reshape(np.fromfile('output/saturation.dat', dtype = np.float64), (dim, dim))
 

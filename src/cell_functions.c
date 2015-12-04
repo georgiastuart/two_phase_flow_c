@@ -81,7 +81,7 @@ double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
 	if (direction == 0)
 		return pos * cur_cell->velocity_x;
 	else if (direction == 1)
-		return pos * cur_cell->velocity_x;
+		return pos * cur_cell->velocity_y;
 	else
 		return 0;
 }
@@ -591,12 +591,6 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	/* Gets the quadrant the foot is in */
 	int quad = get_quadrant(y_comp, x_comp);
 
-	if ((cur_y == mesh->dim.ydim - 2) && (cur_x == 0)) {
-		printf("quad: %d\n", quad);
-		printf("y: %e, x: %e\n", y_comp, x_comp);
-		printf("vel y: %e, vel x: %e\n", cur_cell->velocity_y, cur_cell->velocity_x);
-	}
-
 	/* Sets components to proportions of full cell */
 	y_comp = fabs(y_comp / mesh->dim.h);
 	x_comp = fabs(x_comp / mesh->dim.h);
@@ -688,9 +682,6 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 
 	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
-
-	if ((cur_y == mesh->dim.ydim - 2) && (cur_x == 0)) {
-	printf("sat: %e\n", cur_cell->saturation); }
 }
 
 /* Corner configuration for transport corner calculation */

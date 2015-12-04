@@ -11,6 +11,6 @@ if __name__ == '__main__':
 
     plt.quiver(vel_x, vel_y)
     plt.title(title)
-    plt.axis([0, dim - 1, 0, dim - 1])
+    plt.axis([-1, dim, -1, dim])
     plt.gca().invert_yaxis()
     plt.show()

@@ -572,7 +572,6 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
 
     MPI_Allreduce(&max, &global_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    printf("Global max: %e\n", global_max);
     mesh->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
     mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
 }
@@ -586,22 +585,17 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     /* Computes dt_transport for both meshes */
     mesh_max_time_step(mesh, mesh_old);
     double dtt = mesh->dim.dt_transport;
-    printf("trans ts = %e\n", dtt);
     int num_ts = (int) (mesh->dim.dt / dtt) + 1;
     double remainder_ts = mesh->dim.dt - ((double) (num_ts - 1) * dtt);
 
     // for (int i = 0; i < (num_ts - 1); i++) {
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < num_ts; i++) {
         mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
 
         temp = mesh;
         mesh = mesh_old;
         mesh_old = temp;
     }
-
-    printf("mesh dim: %d\n", mesh->dim.ydim);
-
-    printf("sat outside: %e\n", mesh->cell[MESH_INDEX((mesh->dim.ydim - 1), 0)].saturation);
 
     mesh->dim.dt_transport = remainder_ts;
     mesh_old->dim.dt_transport = remainder_ts;

@@ -39,11 +39,8 @@ int main(int argc, char* argv[])
     MPI_Bcast(&config, 1, mpi_config_t, 0, MPI_COMM_WORLD);
 
     /* Sets up the permeability and source parameters and sends to processes */
-    printf("Before setup parameters\n");
     mpi_setup_parameters(&config, 0, size, is_master, &perm);
-    printf("Setup perm\n");
     mpi_setup_parameters(&config, 1, size, is_master, &source);
-    printf("Setup parameters\n");
 
     /* Gets the type of subdomain */
     block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
