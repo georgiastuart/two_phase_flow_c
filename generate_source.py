@@ -1,7 +1,7 @@
 import numpy as np
 
-dim = 128
-suffix = "large"
+dim = 64
+suffix = "64"
 source = np.zeros([dim, dim])
 source[dim - 1][0] = 10**(-7)
 source[0][dim - 1] = -10**(-7)
