@@ -52,6 +52,8 @@ static int config_helper(void *config, const char *section, const char *name,
         strcpy(pconfig->perm_file, value);
     } else if (MATCH("files","src_file")) {
         strcpy(pconfig->src_file, value);
+    } else if (MATCH("files","sat_file")) {
+        strcpy(pconfig->sat_file, value);
     } else if (MATCH("other", "perm_scale")) {
         sscanf(strdup(value), "%lf", &d);
         pconfig->perm_scale = d;
@@ -365,5 +367,5 @@ void print_attribute(mesh_t *mesh, char *attribute)
 
 void debug_dump(mesh_t *mesh)
 {
-    
+
 }

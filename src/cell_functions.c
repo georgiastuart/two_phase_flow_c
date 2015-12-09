@@ -75,7 +75,7 @@ double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
 	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
 	double pos;
-	pos = -mesh->global.porosity * phase_mobility_w_deriv(cur_cell, &mesh->global);
+	pos = -mesh->global.porosity * cur_cell->pm_w_deriv;
 	pos *= mesh->dim.dt_transport;
 
 	if (direction == 0)
@@ -179,7 +179,7 @@ void press_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
     xi = 2 * cur_cell->perm * total_mobility(cur_cell, &mesh->global)/ mesh->dim.h;
-
+	// printf("lambda: %e\n", total_mobility(cur_cell, &mesh->global));
     for (int k = 0; k < 4; k++) {
         cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
     }
@@ -729,6 +729,7 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	/* Sets components to proportions of full cell */
 	y_comp = fabs(y_comp / mesh->dim.h);
 	x_comp = fabs(x_comp / mesh->dim.h);
+	// printf("ycomp %e, xcomp %e\n", y_comp, x_comp);
 
 	/* Selects the configuration of cells */
 	switch (corner_type) {
@@ -815,6 +816,7 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 
 	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
+	// printf("sat: %e\n", cur_cell->saturation);
 }
 
 /* Boundary update for the diffusion test problem */

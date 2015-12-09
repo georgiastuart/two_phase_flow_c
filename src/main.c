@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[])
 {
-    double *perm, *source;
+    double *perm, *source, *sat;
     mesh_t *mesh, *mesh_old;
     dim_t dim;
     config_t config;
@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
     /* Sets up the permeability and source parameters and sends to processes */
     mpi_setup_parameters(&config, 0, size, is_master, &perm);
     mpi_setup_parameters(&config, 1, size, is_master, &source);
+    mpi_setup_parameters(&config, 2, size, is_master, &sat);
 
     /* Gets the type of subdomain */
     block_type = mpi_get_block_type(rank, config.num_subdomains_y, config.num_subdomains_x);
@@ -52,8 +53,8 @@ int main(int argc, char* argv[])
     set_linearity(config.linearity);
 
     /* Initializes the meshes */
-    mesh = mesh_init_mesh(dim, perm, source, &config);
-    mesh_old = mesh_init_mesh(dim, perm, source, &config);
+    mesh = mesh_init_mesh(dim, perm, source, sat, &config);
+    mesh_old = mesh_init_mesh(dim, perm, source, sat, &config);
 
     /* Initializes send and receive structs for MPI */
     mpi_init_send_receive(mesh, &send_vec, &rec_vec);
@@ -69,8 +70,8 @@ int main(int argc, char* argv[])
     }
 
     /* Sets up mesh for transport test */
-    setup_transport_test(mesh);
-    setup_transport_test(mesh_old);
+    // setup_transport_test(mesh);
+    // setup_transport_test(mesh_old);
 
     // /* Sets up mesh for diffusion test */
     // setup_diffusion_test(mesh);

@@ -21,6 +21,9 @@ typedef struct cell
 
     /* Velocity data */
     double velocity_y, velocity_x;
+
+    /* Phase mobility of water derivative */
+    double pm_w_deriv;
 } cell_t;
 
 typedef struct cell_ops

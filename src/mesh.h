@@ -28,7 +28,7 @@ typedef struct mesh
     global_mesh_params_t global;
 } mesh_t;
 
-mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config);
+mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, double *sat, config_t *config);
 void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
 int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
 int mesh_diff_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);

@@ -9,7 +9,7 @@
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
 #define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)
 #define NDIMS 2
-#define CONFIG_LEN 26
+#define CONFIG_LEN 27
 #define STR_LEN 100
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
@@ -21,13 +21,13 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     /* Create type for config struct */
     const int nitems = CONFIG_LEN;
     int blocklengths[CONFIG_LEN] = {1, 1, 1, 1, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, 1,
-                            STR_LEN, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, STR_LEN, 1, 1, 1};
+                            STR_LEN, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, STR_LEN, 1, 1, 1, STR_LEN};
     MPI_Datatype types[CONFIG_LEN] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                MPI_DOUBLE, MPI_CHAR, MPI_INT, MPI_DOUBLE, MPI_INT};
+                                MPI_DOUBLE, MPI_CHAR, MPI_INT, MPI_DOUBLE, MPI_INT, MPI_CHAR};
     MPI_Aint offsets[CONFIG_LEN];
 
     offsets[0] = offsetof(config_t, xdim);
@@ -56,13 +56,14 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[23] = offsetof(config_t, time_steps);
     offsets[24] = offsetof(config_t, dt);
     offsets[25] = offsetof(config_t, linearity);
+    offsets[26] = offsetof(config_t, sat_file);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);
 }
 
 /* For transmitting permeability and source information to the different processes */
-/* Mode is 0 for permeability, 1 for source */
+/* Mode is 0 for permeability, 1 for source, 2 for saturation */
 void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, double **out_param)
 {
     int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
@@ -85,6 +86,8 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
             full_param = read_file_pad(config->perm_file, config->ydim, config->xdim);
         } else if (mode == 1) {
             full_param = read_file_pad(config->src_file, config->ydim, config->xdim);
+        } else if (mode == 2) {
+            full_param = read_file_pad(config->sat_file, config->ydim, config->xdim);
         } else {
             printf("Invalid Mode\n");
             exit(1);
@@ -195,7 +198,7 @@ static void send_right(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mod
         if (mode) {
             send_vec->send_vec_1[i] = cur_cell->saturation;
         } else {
-            send_vec->send_vec_1[i] = cur_cell->robin[RIGHT];
+            send_vec->send_vec_1[i] = cur_cell->robin[1];
         }
     }
 
@@ -213,7 +216,7 @@ static void send_down(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode
         if (mode) {
             send_vec->send_vec_2[i] = cur_cell->saturation;
         } else {
-            send_vec->send_vec_2[i] = cur_cell->robin[DOWN];
+            send_vec->send_vec_2[i] = cur_cell->robin[2];
         }
     }
 
@@ -232,7 +235,7 @@ static void send_up(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode)
         if (mode) {
             send_vec->send_vec_0[i] = cur_cell->saturation;
         } else {
-            send_vec->send_vec_0[i] = cur_cell->robin[UP];
+            send_vec->send_vec_0[i] = cur_cell->robin[0];
         }
     }
 
@@ -251,7 +254,7 @@ static void send_left(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode
         if (mode) {
             send_vec->send_vec_3[i] = cur_cell->saturation;
         } else {
-            send_vec->send_vec_3[i] = cur_cell->robin[LEFT];
+            send_vec->send_vec_3[i] = cur_cell->robin[3];
         }
     }
 
@@ -272,7 +275,7 @@ static void rec_right(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mo
         if (mode) {
             cur_cell->saturation = rec_vec->receive_vec_3[i];
         } else {
-            cur_cell->robin[LEFT] = rec_vec->receive_vec_3[i];
+            cur_cell->robin[3] = rec_vec->receive_vec_3[i];
         }
     }
 }
@@ -291,7 +294,7 @@ static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mod
         if (mode) {
             cur_cell->saturation = rec_vec->receive_vec_1[i];
         } else {
-            cur_cell->robin[RIGHT] = rec_vec->receive_vec_1[i];
+            cur_cell->robin[1] = rec_vec->receive_vec_1[i];
         }
     }
 }
@@ -310,7 +313,7 @@ static void rec_down(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mod
         if (mode) {
             cur_cell->saturation = rec_vec->receive_vec_0[i];
         } else {
-            cur_cell->robin[UP] = rec_vec->receive_vec_0[i];
+            cur_cell->robin[0] = rec_vec->receive_vec_0[i];
         }
     }
 }
@@ -329,7 +332,7 @@ static void rec_up(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mode)
         if (mode) {
             cur_cell->saturation = rec_vec->receive_vec_2[i];
         } else {
-            cur_cell->robin[DOWN] = rec_vec->receive_vec_2[i];
+            cur_cell->robin[2] = rec_vec->receive_vec_2[i];
         }
     }
 }

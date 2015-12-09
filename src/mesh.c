@@ -18,7 +18,7 @@ void mesh_compute_beta_A(mesh_t *mesh, const cell_ops_t *cell_ops)
 }
 
 /* Sets up the mesh with cell structs at each gridpoint */
-mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config)
+mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, double *sat, config_t *config)
 {
     int i, j;
     mesh_t *mesh;
@@ -44,10 +44,10 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, config_t *config
     for (i = 0; i < (mesh->dim.ydim + 2); i++) {
         for (j = 0; j < (mesh->dim.xdim + 2); j++) {
             cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
+            cur_cell->saturation = sat[MESH_INDEX_INC_PAD(i, j)];
             cur_cell->perm = config->perm_scale * exp(config->perm_strength
                     * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
-            cur_cell->saturation = config->sat_rel_w + 0.01;
         }
     }
 
@@ -429,7 +429,7 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 
     mesh_compute_beta_A(mesh, &cell_press_ops);
     mesh_update_robin(mesh, &cell_press_ops);
-
+    
     for (;;) {
         itr++;
 
@@ -564,7 +564,7 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
             cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
             vel_norm = sqrt(pow(cur_cell->velocity_x / mesh->global.porosity, 2) +
                             pow(cur_cell->velocity_y / mesh->global.porosity, 2));
-            mult = phase_mobility_w_deriv(cur_cell, &mesh_old->global) * vel_norm;
+            mult = cur_cell->pm_w_deriv * vel_norm;
             if (mult > max)
                 max = mult;
         }
@@ -576,11 +576,30 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
     mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
 }
 
+/* Calculates phase mobility derivative of the meshes using information from mesh old */
+static void set_phase_mob_deriv(mesh_t *mesh, mesh_t *mesh_old)
+{
+    double lambda_w_deriv;
+    cell_t *cur_cell;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
+            lambda_w_deriv = phase_mobility_w_deriv(cur_cell, &mesh_old->global);
+            cur_cell->pm_w_deriv = lambda_w_deriv;
+            mesh->cell[MESH_INDEX(i, j)].pm_w_deriv = lambda_w_deriv;
+        }
+    }
+}
+
 /* Time step for the transport problem */
 int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int rank,
             send_vectors_t *send_vec, receive_vectors_t *rec_vec)
 {
     mesh_t *temp;
+
+    /* Computes phase mobility of water derivative*/
+    set_phase_mob_deriv(mesh, mesh_old);
 
     /* Computes dt_transport for both meshes */
     mesh_max_time_step(mesh, mesh_old);
@@ -591,7 +610,6 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     // for (int i = 0; i < (num_ts - 1); i++) {
     for (int i = 0; i < num_ts; i++) {
         mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
-
         mpi_comm(mesh, send_vec, rec_vec, block_type, rank, SAT_MODE);
 
         temp = mesh;

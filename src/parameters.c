@@ -49,7 +49,6 @@ static double rel_perm_w_deriv_nonlinear(cell_t *cell, global_mesh_params_t *glo
 {
     double num = 4.0 * pow(cell->saturation - global->sat_rel_w, 3);
     double denom = pow(1.0 - global->sat_rel_w, 4);
-
     return num / denom;
 }
 
