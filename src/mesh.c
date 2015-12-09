@@ -429,7 +429,7 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 
     mesh_compute_beta_A(mesh, &cell_press_ops);
     mesh_update_robin(mesh, &cell_press_ops);
-    
+
     for (;;) {
         itr++;
 

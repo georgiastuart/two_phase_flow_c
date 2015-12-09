@@ -136,6 +136,7 @@ void press_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
     for (int k = 0; k < 4; k++) {
         adj_cell = &mesh->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
 		adj_total_mob = total_mobility(adj_cell, &mesh->global);
+		printf("cur y %d, cur x %d, adj total mob %e\n", cur_y, cur_x, adj_total_mob);
         if (adj_cell->perm == 0) {
             cur_cell->beta[k] = 0;
         } else {
