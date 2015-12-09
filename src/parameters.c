@@ -86,7 +86,6 @@ void set_linearity(int linearity)
 }
 
 /* Total mobility, lambda */
-/* Linearity is 1 if linear, 0 if nonlinear */
 double total_mobility(cell_t *cell, global_mesh_params_t *global)
 {
     return (lin_ops->rel_perm_o(cell, global) / global->visc_o +

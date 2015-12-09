@@ -441,7 +441,7 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
 
         mesh_press_impose_0_average(mesh, rank);
         mesh_update_robin(mesh, &cell_press_ops);
-        mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
+        mpi_comm(mesh, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
 
         temp = mesh;
         mesh = mesh_old;
@@ -528,7 +528,7 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         }
 
         mesh_update_robin(mesh, &cell_diff_ops);
-        mpi_comm(mesh, send_vec, rec_vec, block_type, rank);
+        mpi_comm(mesh, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
 
         temp = mesh;
         mesh = mesh_old;
@@ -591,6 +591,8 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     // for (int i = 0; i < (num_ts - 1); i++) {
     for (int i = 0; i < num_ts; i++) {
         mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
+
+        mpi_comm(mesh, send_vec, rec_vec, block_type, rank, SAT_MODE);
 
         temp = mesh;
         mesh = mesh_old;

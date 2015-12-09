@@ -363,32 +363,7 @@ void print_attribute(mesh_t *mesh, char *attribute)
     }
 }
 
-/* Prints specified attribute to a file named "attribute".dat */
-void print_attribute_to_file(mesh_t *mesh, char *attribute)
+void debug_dump(mesh_t *mesh)
 {
-    int i, j;
-    FILE *fd;
-    char name[100];
-
-    sprintf(name, "output/%s.dat", attribute);
-
-    if ((fd = fopen(name, "w")) == NULL) {
-        fprintf(stderr, "Unable to open file %s\n", name);
-        return;
-    }
-
-    if (!strcmp(attribute, "pressure")) {
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                if (j == (mesh->dim.xdim - 1)) {
-                    fprintf(fd, "%e\n", mesh->cell[MESH_INDEX(i, j)].pressure);
-                }
-                else {
-                    fprintf(fd, "%e,", mesh->cell[MESH_INDEX(i, j)].pressure);
-                }
-            }
-        }
-    }
-
-    fclose(fd);
+    
 }

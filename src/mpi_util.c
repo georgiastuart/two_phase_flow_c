@@ -183,29 +183,38 @@ void mpi_init_send_receive(mesh_t *mesh, send_vectors_t *send_vec, receive_vecto
     rec_vec->receive_vec_3 = malloc(mesh->dim.ydim * sizeof(double));
 }
 
-/* Sends Robin conditions to the right */
-static void send_right(mesh_t *mesh, send_vectors_t *send_vec, int rank)
+/* Sends values to the right */
+/* Mode is 0 for Robin, 1 for Saturation */
+static void send_right(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode)
 {
     int i;
     cell_t *cur_cell;
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), mesh->dim.xdim)];
-        send_vec->send_vec_1[i] = cur_cell->robin[1];
+        if (mode) {
+            send_vec->send_vec_1[i] = cur_cell->saturation;
+        } else {
+            send_vec->send_vec_1[i] = cur_cell->robin[RIGHT];
+        }
     }
 
     MPI_Send(send_vec->send_vec_1, mesh->dim.ydim, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
 }
 
-/* Sends Robin conditions down */
-static void send_down(mesh_t *mesh, send_vectors_t *send_vec, int rank)
+/* Sends values down */
+/* Mode is 0 for Robin, 1 for Saturation */
+static void send_down(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode)
 {
-    int i;
     cell_t *cur_cell;
 
-    for (i = 0; i < mesh->dim.xdim; i++) {
+    for (int i = 0; i < mesh->dim.xdim; i++) {
         cur_cell = &mesh->cell[INDEX(mesh->dim.ydim, (i + 1))];
-        send_vec->send_vec_2[i] = cur_cell->robin[2];
+        if (mode) {
+            send_vec->send_vec_2[i] = cur_cell->saturation;
+        } else {
+            send_vec->send_vec_2[i] = cur_cell->robin[DOWN];
+        }
     }
 
     MPI_Send(send_vec->send_vec_2, mesh->dim.xdim, MPI_DOUBLE, rank + mesh->dim.num_subdomains_x,
@@ -213,14 +222,18 @@ static void send_down(mesh_t *mesh, send_vectors_t *send_vec, int rank)
 }
 
 /* Sends Robin conditions up */
-static void send_up(mesh_t *mesh, send_vectors_t *send_vec, int rank)
+static void send_up(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode)
 {
     int i;
     cell_t *cur_cell;
 
     for (i = 0; i < mesh->dim.xdim; i++) {
         cur_cell = &mesh->cell[INDEX(1, (i + 1))];
-        send_vec->send_vec_0[i] = cur_cell->robin[0];
+        if (mode) {
+            send_vec->send_vec_0[i] = cur_cell->saturation;
+        } else {
+            send_vec->send_vec_0[i] = cur_cell->robin[UP];
+        }
     }
 
     MPI_Send(send_vec->send_vec_0, mesh->dim.ydim, MPI_DOUBLE, rank - mesh->dim.num_subdomains_x,
@@ -228,21 +241,25 @@ static void send_up(mesh_t *mesh, send_vectors_t *send_vec, int rank)
 }
 
 /* Sends Robin conditions left */
-static void send_left(mesh_t *mesh, send_vectors_t *send_vec, int rank)
+static void send_left(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mode)
 {
     int i;
     cell_t *cur_cell;
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), 1)];
-        send_vec->send_vec_3[i] = cur_cell->robin[3];
+        if (mode) {
+            send_vec->send_vec_3[i] = cur_cell->saturation;
+        } else {
+            send_vec->send_vec_3[i] = cur_cell->robin[LEFT];
+        }
     }
 
     MPI_Send(send_vec->send_vec_3, mesh->dim.ydim, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD);
 }
 
 /* Receive Robin conditions from right */
-static void rec_right(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
+static void rec_right(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mode)
 {
     cell_t *cur_cell;
     int i;
@@ -252,12 +269,16 @@ static void rec_right(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), (mesh->dim.xdim + 1))];
-        cur_cell->robin[3] = rec_vec->receive_vec_3[i];
+        if (mode) {
+            cur_cell->saturation = rec_vec->receive_vec_3[i];
+        } else {
+            cur_cell->robin[LEFT] = rec_vec->receive_vec_3[i];
+        }
     }
 }
 
 /* Receive Robin conditions from left */
-static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
+static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mode)
 {
     cell_t *cur_cell;
     int i;
@@ -267,12 +288,16 @@ static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
 
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), 0)];
-        cur_cell->robin[1] = rec_vec->receive_vec_1[i];
+        if (mode) {
+            cur_cell->saturation = rec_vec->receive_vec_1[i];
+        } else {
+            cur_cell->robin[RIGHT] = rec_vec->receive_vec_1[i];
+        }
     }
 }
 
 /* Receive Robin conditions from down */
-static void rec_down(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
+static void rec_down(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mode)
 {
     cell_t *cur_cell;
     int i;
@@ -282,12 +307,16 @@ static void rec_down(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
 
     for (i = 0; i < mesh->dim.xdim; i++) {
         cur_cell = &mesh->cell[INDEX((mesh->dim.ydim + 1), (i + 1))];
-        cur_cell->robin[0] = rec_vec->receive_vec_0[i];
+        if (mode) {
+            cur_cell->saturation = rec_vec->receive_vec_0[i];
+        } else {
+            cur_cell->robin[UP] = rec_vec->receive_vec_0[i];
+        }
     }
 }
 
 /* Receive Robin conditions from down */
-static void rec_up(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
+static void rec_up(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mode)
 {
     cell_t *cur_cell;
     int i;
@@ -297,143 +326,157 @@ static void rec_up(mesh_t *mesh, receive_vectors_t *rec_vec, int rank)
 
     for (i = 0; i < mesh->dim.xdim; i++) {
         cur_cell = &mesh->cell[INDEX(0, (i + 1))];
-        cur_cell->robin[2] = rec_vec->receive_vec_2[i];
+        if (mode) {
+            cur_cell->saturation = rec_vec->receive_vec_2[i];
+        } else {
+            cur_cell->robin[DOWN] = rec_vec->receive_vec_2[i];
+        }
     }
 }
 
 /* Communication for type 0 block */
-static void comm_0(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_0(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_right(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
 
-    rec_right(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 1 block */
-static void comm_1(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_1(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_left(mesh, send_vec, rank);
-    send_right(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank, mode);
+    send_right(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
 
-    rec_left(mesh, rec_vec, rank);
-    rec_right(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank, mode);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 2 block */
-static void comm_2(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_2(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_left(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
 
-    rec_left(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 3 block */
-static void comm_3(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_3(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_right(mesh, send_vec, rank);
-    send_up(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank, mode);
+    send_up(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
 
-    rec_right(mesh, rec_vec, rank);
-    rec_up(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_up(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 4 block */
-static void comm_4(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_4(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_right(mesh, send_vec, rank);
-    send_up(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
-    send_left(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank, mode);
+    send_up(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
+    send_left(mesh, send_vec, rank, mode);
 
-    rec_right(mesh, rec_vec, rank);
-    rec_up(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
-    rec_left(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_up(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
+    rec_left(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 5 block */
-static void comm_5(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_5(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_up(mesh, send_vec, rank);
-    send_down(mesh, send_vec, rank);
-    send_left(mesh, send_vec, rank);
+    send_up(mesh, send_vec, rank, mode);
+    send_down(mesh, send_vec, rank, mode);
+    send_left(mesh, send_vec, rank, mode);
 
-    rec_up(mesh, rec_vec, rank);
-    rec_down(mesh, rec_vec, rank);
-    rec_left(mesh, rec_vec, rank);
+    rec_up(mesh, rec_vec, rank, mode);
+    rec_down(mesh, rec_vec, rank, mode);
+    rec_left(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 6 block */
-static void comm_6(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_6(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_right(mesh, send_vec, rank);
-    send_up(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank, mode);
+    send_up(mesh, send_vec, rank, mode);
 
-    rec_right(mesh, rec_vec, rank);
-    rec_up(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_up(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 7 block */
-static void comm_7(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_7(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_right(mesh, send_vec, rank);
-    send_up(mesh, send_vec, rank);
-    send_left(mesh, send_vec, rank);
+    send_right(mesh, send_vec, rank, mode);
+    send_up(mesh, send_vec, rank, mode);
+    send_left(mesh, send_vec, rank, mode);
 
-    rec_right(mesh, rec_vec, rank);
-    rec_up(mesh, rec_vec, rank);
-    rec_left(mesh, rec_vec, rank);
+    rec_right(mesh, rec_vec, rank, mode);
+    rec_up(mesh, rec_vec, rank, mode);
+    rec_left(mesh, rec_vec, rank, mode);
 }
 
 /* Communication for type 8 block */
-static void comm_8(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec, int rank)
+static void comm_8(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
+                    int rank, int mode)
 {
-    send_left(mesh, send_vec, rank);
-    send_up(mesh, send_vec, rank);
+    send_left(mesh, send_vec, rank, mode);
+    send_up(mesh, send_vec, rank, mode);
 
-    rec_left(mesh, rec_vec, rank);
-    rec_up(mesh, rec_vec, rank);
+    rec_left(mesh, rec_vec, rank, mode);
+    rec_up(mesh, rec_vec, rank, mode);
 }
 
 /* Communication controller */
+/* Mode 0 for Robin, 1 for Saturation */
 void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec,
-            int block_type, int rank)
+            int block_type, int rank, int mode)
 {
     switch (block_type) {
         case 0:
-            comm_0(mesh, send_vec, rec_vec, rank);
+            comm_0(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 1:
-            comm_1(mesh, send_vec, rec_vec, rank);
+            comm_1(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 2:
-            comm_2(mesh, send_vec, rec_vec, rank);
+            comm_2(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 3:
-            comm_3(mesh, send_vec, rec_vec, rank);
+            comm_3(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 4:
-            comm_4(mesh, send_vec, rec_vec, rank);
+            comm_4(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 5:
-            comm_5(mesh, send_vec, rec_vec, rank);
+            comm_5(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 6:
-            comm_6(mesh, send_vec, rec_vec, rank);
+            comm_6(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 7:
-            comm_7(mesh, send_vec, rec_vec, rank);
+            comm_7(mesh, send_vec, rec_vec, rank, mode);
             break;
         case 8:
-            comm_8(mesh, send_vec, rec_vec, rank);
+            comm_8(mesh, send_vec, rec_vec, rank, mode);
             break;
     }
 }

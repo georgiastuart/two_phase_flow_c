@@ -4,6 +4,12 @@
 #define MESH_INDEX(y, x) ((y + 1) * (mesh->dim.xdim + 2) + (x + 1))
 #define MESH_INDEX_NO_PAD(y, x) (y * mesh->dim.xdim + x)
 #define MESH_INDEX_INC_PAD(y, x) (y * (mesh->dim.xdim + 2) + x)
+#define UP 0
+#define RIGHT 1
+#define DOWN 2
+#define LEFT 3
+#define ROBIN_MODE 0
+#define SAT_MODE 1
 
 #include "util.h"
 #include "cell_functions.h"
