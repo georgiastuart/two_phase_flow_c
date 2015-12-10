@@ -75,6 +75,7 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
     ydim_per_block = config->ydim / config->num_subdomains_y;
 
     transmit_len = (xdim_per_block + 2) * (ydim_per_block + 2);
+    // printf("transmit len: %d\n", transmit_len);
 
     /* Allocate memory for transmit vector and parameter vector */
     transmit = malloc(transmit_len * sizeof(double));

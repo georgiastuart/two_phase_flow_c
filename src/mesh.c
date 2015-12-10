@@ -300,7 +300,7 @@ int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cut
     }
 
     MPI_Bcast(&rel_error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    printf("rel error %e\n", rel_error);
+    // printf("rel error %e\n", rel_error);
 
     if (rel_error < conv_cutoff) {
         return 1;
@@ -440,11 +440,11 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
             break;
         }
 
-        if (rank == 2) {
-            print_attribute(mesh, "saturation");
-        }
+        // if (rank == 2) {
+        //     print_attribute(mesh, "source");
+        // }
 
-        break;
+        // break;
         mesh_press_impose_0_average(mesh, rank);
         mesh_update_robin(mesh, &cell_press_ops);
         mpi_comm(mesh, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
