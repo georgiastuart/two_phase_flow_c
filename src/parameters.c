@@ -35,7 +35,7 @@ static double rel_perm_w_nonlinear(cell_t *cell, global_mesh_params_t *global)
     double num = pow(cell->saturation - global->sat_rel_w, 2);
     double denom = pow(1.0 - global->sat_rel_w, 2);
 
-    return pow(num / denom, 2);
+    return num / denom;
 }
 
 /* Relative permeability of the water phase for linear transport */
@@ -47,8 +47,8 @@ static double rel_perm_w_linear(cell_t *cell, global_mesh_params_t *global)
 /* Derivative of the relative permeability of water, K_rw' */
 static double rel_perm_w_deriv_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    double num = 4.0 * pow(cell->saturation - global->sat_rel_w, 3);
-    double denom = pow(1.0 - global->sat_rel_w, 4);
+    double num = 2.0 * cell->saturation - global->sat_rel_w;
+    double denom = pow(1.0 - global->sat_rel_w, 2);
     return num / denom;
 }
 
