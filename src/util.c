@@ -366,9 +366,9 @@ void print_attribute(mesh_t *mesh, char *attribute)
 
     if ( !strcmp(attribute, "saturation") ) {
         printf("SATURATION\n------------------------------------------------\n");
-        for (i = 0; i < mesh->dim.ydim; i++) {
-            for (j = 0; j < mesh->dim.xdim; j++) {
-                printf("%e\t", mesh->cell[MESH_INDEX(i, j)].saturation);
+        for (i = 0; i < mesh->dim.ydim + 2; i++) {
+            for (j = 0; j < mesh->dim.xdim + 2; j++) {
+                printf("%e\t", mesh->cell[MESH_INDEX_INC_PAD(i, j)].saturation);
             }
             printf("\n");
         }

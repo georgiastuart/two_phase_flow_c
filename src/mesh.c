@@ -440,8 +440,8 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
             break;
         }
 
-        // if (rank == 2) {
-        //     print_attribute(mesh, "source");
+        // if (rank == 0) {
+        //     print_attribute(mesh, "saturation");
         // }
 
         // break;

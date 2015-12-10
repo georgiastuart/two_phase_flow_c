@@ -69,13 +69,12 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
     int i, j, k, xdim_per_block, ydim_per_block, x_block_loc, y_block_loc;
     int transmit_len;
     double *transmit, *full_param;
-    MPI_Request request = MPI_REQUEST_NULL;
+    // MPI_Request request = MPI_REQUEST_NULL;
 
     xdim_per_block = config->xdim / config->num_subdomains_x;
     ydim_per_block = config->ydim / config->num_subdomains_y;
 
     transmit_len = (xdim_per_block + 2) * (ydim_per_block + 2);
-    // printf("transmit len: %d\n", transmit_len);
 
     /* Allocate memory for transmit vector and parameter vector */
     transmit = malloc(transmit_len * sizeof(double));
@@ -94,7 +93,7 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
             exit(1);
         }
 
-        for (k = 0; k < size; k++) {
+        for (k = 1; k < size; k++) {
             x_block_loc = k % config->num_subdomains_x;
             y_block_loc = (int)(k / config->num_subdomains_y);
 
@@ -105,10 +104,25 @@ void mpi_setup_parameters(config_t *config, int mode, int size, int is_master, d
                                 (j + x_block_loc * xdim_per_block), (config->xdim + 2))];
                 }
             }
-            MPI_Isend(transmit, transmit_len, MPI_DOUBLE, k, 0, MPI_COMM_WORLD, &request);
+            MPI_Ssend(transmit, transmit_len, MPI_DOUBLE, k, 0, MPI_COMM_WORLD);
+        }
+    } else {
+        MPI_Recv(*out_param, transmit_len, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    if (is_master) {
+        k = 0;
+        x_block_loc = k % config->num_subdomains_x;
+        y_block_loc = (int)(k / config->num_subdomains_y);
+
+        for (i = 0; i < (ydim_per_block + 2); i++) {
+            for (j = 0; j < (xdim_per_block + 2); j++) {
+                (*out_param)[INDEX_NO_MESH(i, j, xdim_per_block + 2)] =
+                            full_param[INDEX_NO_MESH((i + y_block_loc * ydim_per_block),
+                            (j + x_block_loc * xdim_per_block), (config->xdim + 2))];
+            }
         }
     }
-    MPI_Recv(*out_param, transmit_len, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     free(transmit);
     free(full_param);
 }
