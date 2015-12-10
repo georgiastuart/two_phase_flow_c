@@ -89,6 +89,8 @@ int main(int argc, char* argv[])
                         i, t2 - t1, itr);
         }
 
+        write_data(mesh, &config, size, rank, "saturation");
+
         itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                                            rank, &send_vec, &rec_vec);
 
