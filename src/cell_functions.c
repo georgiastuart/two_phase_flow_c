@@ -75,8 +75,8 @@ double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
 	cell_t *cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
 	double pos;
-	pos = -mesh->global.porosity * cur_cell->pm_w_deriv;
-	pos *= mesh->dim.dt_transport;
+	pos = (-1.0) * cur_cell->pm_w_deriv * mesh->dim.dt_transport;
+	pos /= mesh->global.porosity;
 
 	if (direction == 0)
 		return pos * cur_cell->velocity_x;
@@ -573,6 +573,9 @@ void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	/* of characteristics */
 	y_comp = trans_get_old_position(mesh_old, cur_y, cur_x, 1);
 	x_comp = trans_get_old_position(mesh_old, cur_y, cur_x, 0);
+
+	// if ((cur_y == 62) && (cur_x == 1))
+	// 	printf("x: %d, y: %d, xcomp: %e, ycomp: %e\n", cur_x, cur_y, x_comp, y_comp );
 
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];

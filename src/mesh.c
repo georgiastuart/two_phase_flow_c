@@ -588,9 +588,8 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
     for (int i = 0; i < mesh->dim.ydim; i++) {
         for (int j = 0; j < mesh->dim.xdim; j++) {
             cur_cell = &mesh_old->cell[MESH_INDEX(i, j)];
-            vel_norm = sqrt(pow(cur_cell->velocity_x / mesh->global.porosity, 2) +
-                            pow(cur_cell->velocity_y / mesh->global.porosity, 2));
-            mult = cur_cell->pm_w_deriv * vel_norm;
+            vel_norm = sqrt(pow(cur_cell->velocity_x, 2) + pow(cur_cell->velocity_y, 2));
+            mult = cur_cell->pm_w_deriv / mesh->global.porosity * vel_norm;
             if (mult > max)
                 max = mult;
         }
