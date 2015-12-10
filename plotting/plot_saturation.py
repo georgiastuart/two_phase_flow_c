@@ -19,3 +19,10 @@ if __name__ == '__main__':
     plt.axis([0, dim, 0, dim])
     plt.gca().invert_yaxis()
     plt.show()
+
+    plt.contour(saturation)
+    plt.title(title)
+    plt.colorbar()
+    plt.axis([0, dim, 0, dim])
+    plt.gca().invert_yaxis()
+    plt.show()
