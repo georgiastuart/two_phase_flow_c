@@ -1,9 +1,9 @@
 import sympy as sp
 
 if __name__ == '__main__':
-    s, s_rw, s_ro, mu_w, mu_o = sp.symbols('s, s_rw, s_ro, mu_w, mu_o')
+    s, s_rw, s_ro, mu_w, mu_o, eta = sp.symbols('s, s_rw, s_ro, mu_w, mu_o, eta')
 
-    k_rw = ((s - s_rw)**2 / (1 - s_rw)**2)**2
+    k_rw = ((s - s_rw)**2 / (1 - s_rw)**2)
     k_ro = (1 - s / (1 - s_ro))**2
 
     lam = (k_ro / mu_o) + (k_rw / mu_w)
@@ -15,8 +15,12 @@ if __name__ == '__main__':
 
     lam_w_deriv = (mu_w * lam * k_rw_deriv - k_rw * mu_w * lam_deriv) / (mu_w * lam)**2
 
+    zeta = s_ro**2 * (1 - s - s_rw)**(-2)
+    p_c = eta * ((s - s_rw)**(-2) - zeta * (1 - s)**(-2))
+
     print lam.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0})
     print sp.Derivative(lam_w, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
     print lam_w_deriv.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
     print k_rw_deriv.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
     print k_ro_deriv.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
+    print sp.Derivative(p_c, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21, eta:3000})

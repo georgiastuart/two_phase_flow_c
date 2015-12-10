@@ -39,7 +39,7 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
 int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec);
-void mesh_update_saturation_time(mesh_t *mesh, mesh_t *mesh_old);
+void mesh_update_saturation_time(mesh_t *mesh);
 void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old);
 int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int rank,
             send_vectors_t *send_vec, receive_vectors_t *rec_vec);

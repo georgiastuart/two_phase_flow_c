@@ -87,12 +87,9 @@ double trans_get_old_position(mesh_t *mesh, int cur_y, int cur_x, int direction)
 }
 
 /* Computes diffusion at the current cell */
-void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
+void diff_compute_diffusion(mesh_t *mesh, cell_t *cur_cell)
 {
     double total_mob, w_mob, o_mob, pc_deriv;
-    cell_t *cur_cell;
-
-    cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
     total_mob = total_mobility(cur_cell, &mesh->global);
     w_mob = phase_mobility_w(cur_cell, &mesh->global);
@@ -100,6 +97,18 @@ void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x)
     pc_deriv = cap_pressure_deriv(cur_cell, &mesh->global);
 
     cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
+}
+
+/* Computes the source term for diffusion*/
+void diff_compute_source(mesh_t *mesh, cell_t *cur_cell)
+{
+	if (cur_cell->source > 0) {
+		cur_cell->source_d = (1.0 - phase_mobility_w(cur_cell, &mesh->global))
+						* cur_cell->source;
+	} else {
+		cur_cell->source_d = 0;
+	}
+
 }
 
 /* Combutes beta at the current cell for diffusion problem */

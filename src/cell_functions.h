@@ -43,7 +43,8 @@ int get_adjacent_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 int get_diagonal_index(mesh_t *mesh, int direction, int cur_y, int cur_x);
 
 /* Diffusion functions */
-void diff_compute_diffusion(mesh_t *mesh, int cur_y, int cur_x);
+void diff_compute_diffusion(mesh_t *mesh, cell_t *cur_cell);
+void diff_compute_source(mesh_t *mesh, cell_t *cur_cell);
 void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef);
 void diff_compute_robin(mesh_t *mesh, int cur_y, int cur_x);
 void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x);

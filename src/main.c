@@ -69,6 +69,36 @@ int main(int argc, char* argv[])
         printf("Running iterations...\n");
     }
 
+    /* Two phase flow time steps */
+    int itr;
+    for (int i = 0; i < config.time_steps; i++) {
+        itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+                    block_type, rank, &send_vec, &rec_vec);
+
+        if (is_master) {
+            t1 = MPI_Wtime();
+            printf("Time %d: Pressure finished after %f seconds and %d iterations.\n",
+                        i, t1 - t2, itr);
+        }
+
+        itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
+
+        if (is_master) {
+            t2 = MPI_Wtime();
+            printf("Time %d: Transport finished after %f seconds and %d iterations.\n",
+                        i, t2 - t1, itr);
+        }
+
+        itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
+                                           rank, &send_vec, &rec_vec);
+
+        if (is_master) {
+            t1 = MPI_Wtime();
+            printf("Time %d: Diffusion finished after %f seconds and %d iterations.\n",
+                        i, t1 - t2, itr);
+        }
+    }
+
     /* Sets up mesh for transport test */
     // setup_transport_test(mesh);
     // setup_transport_test(mesh_old);
@@ -77,16 +107,16 @@ int main(int argc, char* argv[])
     // setup_diffusion_test(mesh);
     // setup_diffusion_test(mesh_old);
 
-    /* Iteration of the pressure problem */
-    int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
-                block_type, rank, &send_vec, &rec_vec);
+    // /* Iteration of the pressure problem */
+    // int itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+    //             block_type, rank, &send_vec, &rec_vec);
+    //
+    // if (is_master) {
+    //     t1 = MPI_Wtime();
+    //     printf("Pressure finished after %f seconds and %d iterations.\n", t1 - t2, itr);
+    // }
 
-    if (is_master) {
-        t1 = MPI_Wtime();
-        printf("Pressure finished after %f seconds and %d iterations.\n", t1 - t2, itr);
-    }
-
-    itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
+    // itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
 
     // for (int i = 0; i < config.time_steps; i++) {
     //     itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
@@ -99,10 +129,10 @@ int main(int argc, char* argv[])
     //     mesh_old = temp;
     // }
 
-    if (is_master) {
-        t2 = MPI_Wtime();
-        printf("Transport finished after %f seconds and %d iterations.\n", t2 - t1, itr);
-    }
+    // if (is_master) {
+    //     t2 = MPI_Wtime();
+    //     printf("Transport finished after %f seconds and %d iterations.\n", t2 - t1, itr);
+    // }
 
     // /* Computes velocity */
     // mesh_compute_velocity(mesh);

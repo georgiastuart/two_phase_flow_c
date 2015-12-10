@@ -6,6 +6,13 @@
 #include "mpi.h"
 #include "cell_functions.h"
 
+/* Deep copies mesh 1 to mesh 2. Dimensions must be the same */
+void mesh_copy(mesh_t *mesh_1, mesh_t *mesh_2)
+{
+    size_t size = sizeof(cell_t) * (mesh_1->dim.xdim + 2) * (mesh_1->dim.ydim + 2);
+    memcpy(mesh_2->cell, mesh_1->cell, size);
+}
+
 /* Computes beta and A at all mesh points */
 void mesh_compute_beta_A(mesh_t *mesh, const cell_ops_t *cell_ops)
 {
@@ -431,6 +438,12 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     mesh_compute_beta_A(mesh, &cell_press_ops);
     mesh_update_robin(mesh, &cell_press_ops);
 
+    mesh_compute_beta_A(mesh_old, &cell_press_ops);
+    mesh_update_robin(mesh_old, &cell_press_ops);
+
+    mpi_comm(mesh_old, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
+    mpi_comm(mesh, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
+
     for (;;) {
         itr++;
 
@@ -458,19 +471,20 @@ int mesh_pressure_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     mesh_compute_velocity(mesh);
     mesh_set_velocity(mesh, mesh_old);
 
-    temp = mesh;
-    mesh = mesh_old;
-    mesh_old = temp;
+    mesh_copy(mesh, mesh_old);
 
     return itr;
 }
 
 /* Computes diffusion D at all mesh points */
-void mesh_compute_diffusion_coef(mesh_t *mesh)
+void mesh_compute_diffusion_coef_source(mesh_t *mesh)
 {
-    for (int i = 0; i < mesh->dim.ydim; i++) {
-        for (int j = 0; j < mesh->dim.xdim; j++) {
-            diff_compute_diffusion(mesh, i, j);
+    cell_t *cur_cell;
+    for (int i = 0; i < (mesh->dim.ydim + 2); i++) {
+        for (int j = 0; j < (mesh->dim.xdim + 2); j++) {
+            cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
+            diff_compute_diffusion(mesh, cur_cell);
+            diff_compute_source(mesh, cur_cell);
         }
     }
 }
@@ -512,7 +526,8 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int itr = 0;
     mesh_t *temp;
 
-    mesh_compute_diffusion_coef(mesh);
+    mesh_compute_diffusion_coef_source(mesh);
+    mesh_compute_diffusion_coef_source(mesh_old);
 
     mesh_compute_beta_A(mesh, &cell_diff_ops);
     mesh_update_robin(mesh, &cell_diff_ops);
@@ -520,12 +535,16 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     mesh_compute_beta_A(mesh_old, &cell_diff_ops);
     mesh_update_robin(mesh_old, &cell_diff_ops);
 
+    mpi_comm(mesh, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
+    mpi_comm(mesh_old, send_vec, rec_vec, block_type, rank, ROBIN_MODE);
+
     for (;;) {
         itr++;
 
         // diffusion_test_update(mesh, mesh_old);
         mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
 
+        // break;
         if (mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
             break;
         }
@@ -542,20 +561,20 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         mesh_old = temp;
     }
 
+    mesh_copy(mesh, mesh_old);
+
     return itr;
 }
 
 /* Sets saturation_prev to saturation */
-void mesh_update_saturation_time(mesh_t *mesh, mesh_t *mesh_old)
+void mesh_update_saturation_time(mesh_t *mesh)
 {
-    cell_t *cur_cell, *cur_cell_old;
+    cell_t *cur_cell;
 
     for (int i = 0; i < mesh->dim.ydim; i++) {
         for (int j = 0; j < mesh->dim.xdim; j++) {
             cur_cell = &mesh->cell[MESH_INDEX(i, j)];
-            cur_cell_old = &mesh_old->cell[MESH_INDEX(i, j)];
             cur_cell->saturation_prev = cur_cell->saturation;
-            cur_cell_old->saturation_prev = cur_cell->saturation;
         }
     }
 }
@@ -628,6 +647,11 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     mesh_old->dim.dt_transport = remainder_ts;
 
     mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
+
+    /* sets current s to s_prev */
+    mesh_update_saturation_time(mesh);
+
+    mesh_copy(mesh, mesh_old);
 
     return num_ts;
 }
