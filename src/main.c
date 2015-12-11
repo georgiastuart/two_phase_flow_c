@@ -72,28 +72,29 @@ int main(int argc, char* argv[])
     /* Two phase flow time steps */
     int itr;
     for (int i = 0; i < config.time_steps; i++) {
-        itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
-                    block_type, rank, &send_vec, &rec_vec);
-
-        if (is_master) {
-            t1 = MPI_Wtime();
-            printf("Time %d: Pressure finished after %f seconds and %d iterations.\n",
-                        i, t1 - t2, itr);
-        }
-
-        itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
-
-        if (is_master) {
-            t2 = MPI_Wtime();
-            printf("Time %d: Transport finished after %f seconds and %d iterations.\n",
-                        i, t2 - t1, itr);
-        }
-
-        write_data(mesh, &config, size, rank, "saturation");
+        // itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
+        //             block_type, rank, &send_vec, &rec_vec);
+        //
+        // if (is_master) {
+        //     t1 = MPI_Wtime();
+        //     printf("Time %d: Pressure finished after %f seconds and %d iterations.\n",
+        //                 i, t1 - t2, itr);
+        // }
+        //
+        // itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
+        //
+        // if (is_master) {
+        //     t2 = MPI_Wtime();
+        //     printf("Time %d: Transport finished after %f seconds and %d iterations.\n",
+        //                 i, t2 - t1, itr);
+        // }
+        //
+        // write_data(mesh, &config, size, rank, "saturation");
 
         itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                                            rank, &send_vec, &rec_vec);
 
+        write_data(mesh, &config, size, rank, "saturation");
         if (is_master) {
             t1 = MPI_Wtime();
             printf("Time %d: Diffusion finished after %f seconds and %d iterations.\n",

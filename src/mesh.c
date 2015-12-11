@@ -560,7 +560,7 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         mesh_update(mesh, mesh_old, block_type, &cell_diff_ops);
 
         // break;
-        if (mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) {
+        if ((mesh_diff_convergence_check(mesh, mesh_old, conv_cutoff, rank)) && (itr > 2)) {
             break;
         }
 

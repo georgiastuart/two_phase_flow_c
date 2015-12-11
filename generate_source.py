@@ -10,10 +10,10 @@ dim = args.dimension
 source = np.zeros([dim, dim])
 source_size = args.src_dim
 
-for i in xrange(source_size):
-    for j in xrange(source_size):
-        source[dim - 1 - i][j] = 10**(-7)
-        source[i][dim - 1 - j] = -10**(-7)
+# for i in xrange(source_size):
+#     for j in xrange(source_size):
+#         source[dim - 1 - i][j] = 10**(-7)
+#         source[i][dim - 1 - j] = -10**(-7)
 
 src_name = 'input/src_field_%d.txt' % (dim)
 np.savetxt(src_name, source, delimiter='\n')
@@ -24,7 +24,7 @@ np.savetxt(perm_name, perm, delimiter='\n')
 
 sat_name = 'input/sat_field_%d.txt' % (dim)
 sat = 0.21 * np.ones([dim, dim])
-# for i in xrange(source_size):
-#     for j in xrange(source_size):
-#         sat[dim - 1 - i][j] = 0.84
+for i in xrange(source_size):
+    for j in xrange(source_size):
+        sat[dim - 1 - i][j] = 0.84
 np.savetxt(sat_name, sat, delimiter='\n')

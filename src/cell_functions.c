@@ -216,6 +216,8 @@ void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 
     for (int k = 0; k < 4; k++) {
         cur_cell->A_d[k] = xi / (cur_cell->beta[k] * xi - 1.0);
+		// if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0))
+		// 	printf("A: %e\n", cur_cell->A_d[k]);
     }
 }
 
@@ -447,7 +449,7 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 		if ((k != boundary_side1) && (k != boundary_side2)) {
 			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
 			sum_A += cur_cell_old->A_d[k];
-			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];
+			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];;
 		}
 	}
 
@@ -457,6 +459,9 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	denom = phi_h_dt + sum_A;
 
 	cur_cell->saturation = num / denom;
+
+	if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0))
+		printf("sat %.*e\n", 15, cur_cell->saturation);
 
 	/* Updates flux for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {

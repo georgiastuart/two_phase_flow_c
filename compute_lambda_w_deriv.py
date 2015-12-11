@@ -19,6 +19,13 @@ if __name__ == '__main__':
     zeta = s_ro**2 * (1 - s_ro - s_rw)**(-2)
     p_c = eta * ((s - s_rw)**(-2) - zeta * (1 - s)**(-2))
     diff = k * lam * lam_o * lam_w * sp.Derivative(p_c, s).doit()
+    diff1 = diff.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.84, eta:3000, k:10**(-11)})
+    diff2 = diff.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21, eta:3000, k:10**(-11)})
+    diff_eff = 2 * diff1 * diff2 / (diff1 + diff2)
+    beta = -400 / diff_eff
+    xi = 2 * diff1 / 400
+    A = xi / (beta * xi - 1)
+    phi_h_dt = 0.2 * 400 / 86400
 
     print lam.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0})
     print sp.Derivative(lam_w, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
@@ -26,6 +33,10 @@ if __name__ == '__main__':
     print k_rw_deriv.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
     print k_ro_deriv.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
     print sp.Derivative(p_c, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21, eta:3000})
-    print diff.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21, eta:3000, k:10**(-11)})
-
-    sp.plotting.plot(sp.Derivative(p_c, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, eta:3000}), (s, 0.21, 0.84))
+    print diff.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.84, eta:3000, k:10**(-11)})
+    print 'beta: %e' % (beta)
+    print 'xi: %e' % (xi)
+    print 'A: %e' % (A)
+    print 'phi_h_dt: %e' % (phi_h_dt)
+    print 'Sat: %s' % repr(phi_h_dt * 0.84 / (phi_h_dt + 2 * A))
+    # sp.plotting.plot(sp.Derivative(p_c, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, eta:3000}), (s, 0.21, 0.84))
