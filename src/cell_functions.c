@@ -97,6 +97,8 @@ void diff_compute_diffusion(mesh_t *mesh, cell_t *cur_cell)
     pc_deriv = cap_pressure_deriv(cur_cell, &mesh->global);
 
     cur_cell->diffusion = cur_cell->perm * total_mob * w_mob * o_mob * pc_deriv;
+
+	// printf("wmob: %e\n",cur_cell->diffusion);
 }
 
 /* Computes the source term for diffusion*/
@@ -124,9 +126,9 @@ void diff_compute_beta(mesh_t *mesh, int cur_y, int cur_x, double beta_coef)
 		if (adj_cell->diffusion == 0) {
 			cur_cell->beta[k] = 0;
 		} else {
-			diff_eff = 2 * adj_cell->diffusion * cur_cell->diffusion;
+			diff_eff = 2.0 * adj_cell->diffusion * cur_cell->diffusion;
 			diff_eff /= (adj_cell->diffusion + cur_cell->diffusion);
-			cur_cell->beta[k] = beta_coef * mesh->dim.h / diff_eff;
+			cur_cell->beta[k] =(-1.0) * beta_coef * mesh->dim.h / diff_eff;
 		}
 	}
 }
@@ -196,24 +198,24 @@ void press_compute_A(mesh_t *mesh, int cur_y, int cur_x)
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-    xi = 2 * cur_cell->perm * total_mobility(cur_cell, &mesh->global)/ mesh->dim.h;
+    xi = 2.0 * cur_cell->perm * total_mobility(cur_cell, &mesh->global)/ mesh->dim.h;
 	// printf("lambda: %e\n", total_mobility(cur_cell, &mesh->global));
     for (int k = 0; k < 4; k++) {
         cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
     }
 }
 
-/* Computes A_alpha = xi/(1+beta_alpha*xi), xi = 2k/h */
+/* Computes A_alpha = xi/(1+beta_alpha*xi), xi = - 2D/h */
 void diff_compute_A(mesh_t *mesh, int cur_y, int cur_x)
 {
     double xi;
     cell_t *cur_cell;
 
     cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
-    xi = 2 * cur_cell->diffusion / mesh->dim.h;
+    xi = 2.0 * cur_cell->diffusion / mesh->dim.h;
 
     for (int k = 0; k < 4; k++) {
-        cur_cell->A_d[k] = xi / (1 + cur_cell->beta[k] * xi);
+        cur_cell->A_d[k] = xi / (cur_cell->beta[k] * xi - 1.0);
     }
 }
 
@@ -485,10 +487,10 @@ double trans_get_average_sat(cell_t *cur_cell, cell_t *adj_cell_hor, cell_t *adj
 
 	/* Finds average saturation weighted to areas of the new cell in each */
 	/* adjacent cell */
-	saturation = cur_cell->saturation * x_1 * y_1;
-	saturation += adj_cell_hor->saturation * x_comp * y_1;
-	saturation += adj_cell_vert->saturation * x_1 * y_comp;
-	saturation += adj_cell_diag->saturation * x_comp * y_comp;
+	saturation = cur_cell->saturation_prev * x_1 * y_1;
+	saturation += adj_cell_hor->saturation_prev * x_comp * y_1;
+	saturation += adj_cell_vert->saturation_prev * x_1 * y_comp;
+	saturation += adj_cell_diag->saturation_prev * x_comp * y_comp;
 
 	return saturation;
 }
@@ -590,7 +592,7 @@ void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	/* Selects the configuration of cells */
 	assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert, &adj_cell_diag, cur_y, cur_x, quad);
 
-	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
@@ -701,7 +703,7 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 			break;
 	}
 
-	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
@@ -835,7 +837,7 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 			}
 	}
 
-	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 	// printf("sat: %e\n", cur_cell->saturation);
 }
@@ -854,7 +856,7 @@ void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	sum_A = 0;
 	sum_A_R = 0;
 
-	xi = 2 * cur_cell->diffusion / mesh->dim.h;
+	xi = 2.0 * cur_cell->diffusion / mesh->dim.h;
 
 	/* Updates saturation for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {

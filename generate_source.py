@@ -12,8 +12,8 @@ source_size = args.src_dim
 
 for i in xrange(source_size):
     for j in xrange(source_size):
-        source[dim - 1 - i][j] = 5.2*10**(-6)
-        source[i][dim - 1 - j] = -5.2*10**(-6)
+        source[dim - 1 - i][j] = 10**(-7)
+        source[i][dim - 1 - j] = -10**(-7)
 
 src_name = 'input/src_field_%d.txt' % (dim)
 np.savetxt(src_name, source, delimiter='\n')

@@ -52,6 +52,7 @@ mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, double *sat, con
         for (j = 0; j < (mesh->dim.xdim + 2); j++) {
             cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
             cur_cell->saturation = sat[MESH_INDEX_INC_PAD(i, j)];
+            cur_cell->saturation_prev = sat[MESH_INDEX_INC_PAD(i, j)];
             cur_cell->perm = config->perm_scale * exp(config->perm_strength
                     * perm[MESH_INDEX_INC_PAD(i, j)]);
             cur_cell->source = source[MESH_INDEX_INC_PAD(i, j)];
@@ -343,6 +344,7 @@ int mesh_diff_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cuto
     }
 
     MPI_Bcast(&rel_error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    // printf("error: %e\n", rel_error);
 
     if (rel_error < conv_cutoff) {
         return 1;
@@ -519,6 +521,19 @@ void diffusion_test_update(mesh_t *mesh, mesh_t *mesh_old)
     }
 }
 
+/* Sets saturation_prev to saturation */
+void mesh_update_saturation_time(mesh_t *mesh)
+{
+    cell_t *cur_cell;
+
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+            cur_cell->saturation_prev = cur_cell->saturation;
+        }
+    }
+}
+
 /* For diffusion step in the flow problem */
 int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
     int block_type, int rank, send_vectors_t *send_vec, receive_vectors_t *rec_vec)
@@ -561,22 +576,11 @@ int mesh_diffusion_iteration(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff,
         mesh_old = temp;
     }
 
+    mesh_update_saturation_time(mesh);
+
     mesh_copy(mesh, mesh_old);
 
     return itr;
-}
-
-/* Sets saturation_prev to saturation */
-void mesh_update_saturation_time(mesh_t *mesh)
-{
-    cell_t *cur_cell;
-
-    for (int i = 0; i < mesh->dim.ydim; i++) {
-        for (int j = 0; j < mesh->dim.xdim; j++) {
-            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
-            cur_cell->saturation_prev = cur_cell->saturation;
-        }
-    }
 }
 
 /* Finds the maxiumum time step for transport */
@@ -648,7 +652,7 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
 
     /* sets current s to s_prev */
-    mesh_update_saturation_time(mesh);
+    // mesh_update_saturation_time(mesh);
 
     mesh_copy(mesh, mesh_old);
 

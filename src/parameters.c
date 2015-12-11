@@ -4,23 +4,40 @@
 #include "cell_functions.h"
 #include "mesh.h"
 
+/* Selects the saturation level to guard against saturations that are too high */
+static double select_sat(cell_t *cell, global_mesh_params_t *global)
+{
+    // if (cell->saturation < (global->sat_rel_w + 0.001)) {
+    //     return global->sat_rel_w + 0.001;
+    // } else if (cell->saturation > (1.0 - (global->sat_rel_o + 0.001))) {
+    //     return 1.0 - (global->sat_rel_o + 0.001);
+    // } else {
+    //     return cell->saturation;
+    // }
+
+    return cell->saturation;
+}
+
 /* Relative permeability of the oil phase, K_ro */
 static double rel_perm_o_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    return pow(1.0 - (cell->saturation / (1.0 - global->sat_rel_o)), 2);
+    double sat = select_sat(cell, global);
+    return pow(1.0 - (sat / (1.0 - global->sat_rel_o)), 2);
 }
 
 /* Relative permeability of the oil phase for linear transport */
 static double rel_perm_o_linear(cell_t *cell, global_mesh_params_t *global)
 {
-    return 1.0 - cell->saturation;
+    double sat = select_sat(cell, global);
+    return 1.0 - sat;
 }
 
 /* Derivative of the relative permeability of oil, K_ro' */
 static double rel_perm_o_deriv_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
+    double sat = select_sat(cell, global);
     double denom = (1.0 - global->sat_rel_o);
-    return -2.0 / denom * (1.0 - cell->saturation / denom);
+    return -2.0 / denom * (1.0 - sat / denom);
 }
 
 /* Derivative of the relative permeability of oil for linear transport */
@@ -32,7 +49,8 @@ static double rel_perm_o_deriv_linear(cell_t *cell, global_mesh_params_t *global
 /* Relative permeability of the water phase, K_rw */
 static double rel_perm_w_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    double num = pow(cell->saturation - global->sat_rel_w, 2);
+    double sat = select_sat(cell, global);
+    double num = pow(sat - global->sat_rel_w, 2);
     double denom = pow(1.0 - global->sat_rel_w, 2);
 
     return num / denom;
@@ -41,13 +59,14 @@ static double rel_perm_w_nonlinear(cell_t *cell, global_mesh_params_t *global)
 /* Relative permeability of the water phase for linear transport */
 static double rel_perm_w_linear(cell_t *cell, global_mesh_params_t *global)
 {
-    return cell->saturation;
+    return select_sat(cell, global);
 }
 
 /* Derivative of the relative permeability of water, K_rw' */
 static double rel_perm_w_deriv_nonlinear(cell_t *cell, global_mesh_params_t *global)
 {
-    double num = 2.0 * cell->saturation - global->sat_rel_w;
+    double sat = select_sat(cell, global);
+    double num = 2.0 * (sat - global->sat_rel_w);
     double denom = pow(1.0 - global->sat_rel_w, 2);
     return num / denom;
 }
@@ -132,13 +151,14 @@ double phase_mobility_w_deriv(cell_t *cell, global_mesh_params_t *global)
 double cap_pressure_deriv(cell_t *cell, global_mesh_params_t *global)
 {
     double z, s_o, pc_deriv;
+    double sat = select_sat(cell, global);
 
-    s_o = 1 - global->sat_rel_o;
+    s_o = 1.0 - global->sat_rel_o;
     z = pow(global->sat_rel_o, 2) * pow(s_o - global->sat_rel_w, -2);
 
-    pc_deriv = pow(cell->saturation - global->sat_rel_w, -3);
-    pc_deriv += z * pow(1 - cell->saturation, -3);
-    pc_deriv *= -2 * global->eta;
+    pc_deriv = pow(sat - global->sat_rel_w, -3);
+    pc_deriv += z * pow(1.0 - sat, -3);
+    pc_deriv *= -2.0 * global->eta;
 
     return pc_deriv;
 }
