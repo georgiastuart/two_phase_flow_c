@@ -79,5 +79,6 @@ void diff_update_corner_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y,
 	int cur_x, int boundary_side1, int boundary_side2);
 void diff_update_boundary_dirichlet(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
                     int boundary_side);
+void source_term_check(mesh_t *mesh, cell_t *cell);
 
 #endif /* H_CELL_FUNCTIONS */

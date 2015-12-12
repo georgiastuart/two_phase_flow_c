@@ -104,13 +104,32 @@ void diff_compute_diffusion(mesh_t *mesh, cell_t *cur_cell)
 /* Computes the source term for diffusion*/
 void diff_compute_source(mesh_t *mesh, cell_t *cur_cell)
 {
-	if (cur_cell->source > 0) {
+	if (cur_cell->saturation >= (1.0 - mesh->global.sat_rel_o)) {
+		cur_cell->source_d = 0.0;
+	} else if (cur_cell->source > 0.0) {
 		cur_cell->source_d = (1.0 - phase_mobility_w(cur_cell, &mesh->global))
 						* cur_cell->source;
+		// printf("phase mob: %e\n", phase_mobility_w(cur_cell, &mesh->global));
 	} else {
-		cur_cell->source_d = 0;
+		cur_cell->source_d = 0.0;
 	}
 
+}
+
+void source_term_check(mesh_t *mesh, cell_t *cell)
+{
+	FILE *fd;
+	fd = fopen("output/source_check.txt", "w");
+	cell->saturation = 0.21;
+	cell->source = 1.0e-7;
+
+	for (int i = 0; i < 631; i++) {
+		diff_compute_source(mesh, cell);
+		fprintf(fd, "%e\n", cell->source_d);
+		cell->saturation += 0.001;
+	}
+
+	fclose(fd);
 }
 
 /* Combutes beta at the current cell for diffusion problem */
@@ -201,7 +220,7 @@ void press_compute_A(mesh_t *mesh, int cur_y, int cur_x)
     xi = 2.0 * cur_cell->perm * total_mobility(cur_cell, &mesh->global)/ mesh->dim.h;
 	// printf("lambda: %e\n", total_mobility(cur_cell, &mesh->global));
     for (int k = 0; k < 4; k++) {
-        cur_cell->A_p[k] = xi / (1 + cur_cell->beta[k] * xi);
+        cur_cell->A_p[k] = xi / (1.0 + cur_cell->beta[k] * xi);
     }
 }
 
@@ -444,14 +463,22 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	sum_A = 0;
 	sum_A_R = 0;
 
+	// if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0)) {
+	// 	printf("sat start%.*e\n", 15, cur_cell->saturation);
+	// }
+
 	/* Updates saturation for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {
 		if ((k != boundary_side1) && (k != boundary_side2)) {
 			adj_cell = &mesh_old->cell[get_adjacent_index(mesh, k, cur_y, cur_x)];
 			sum_A += cur_cell_old->A_d[k];
-			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];;
+			sum_A_R += cur_cell_old->A_d[k] * adj_cell->robin[(k + 2) % 4];
 		}
 	}
+	// if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0)) {
+	// 	printf("sum a r %e\n", sum_A_R);
+	// 	printf("sum a %e\n", sum_A);
+	// }
 
 	phi_h_dt = (mesh->global.porosity * mesh->dim.h / mesh->dim.dt);
 
@@ -460,8 +487,11 @@ void diff_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 
 	cur_cell->saturation = num / denom;
 
-	if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0))
-		printf("sat %.*e\n", 15, cur_cell->saturation);
+	// if ((cur_y == mesh->dim.ydim - 1) && (cur_x == 0)) {
+	// 	printf("sat %.*e\n", 15, cur_cell->saturation);
+	// 	printf("source %e\n", cur_cell->source);
+	// 	printf("source d %e\n", cur_cell->source_d);
+	// }
 
 	/* Updates flux for the current cell on the new mesh */
 	for (k = 0; k < 4; k++) {
@@ -492,10 +522,10 @@ double trans_get_average_sat(cell_t *cur_cell, cell_t *adj_cell_hor, cell_t *adj
 
 	/* Finds average saturation weighted to areas of the new cell in each */
 	/* adjacent cell */
-	saturation = cur_cell->saturation_prev * x_1 * y_1;
-	saturation += adj_cell_hor->saturation_prev * x_comp * y_1;
-	saturation += adj_cell_vert->saturation_prev * x_1 * y_comp;
-	saturation += adj_cell_diag->saturation_prev * x_comp * y_comp;
+	saturation = cur_cell->saturation * x_1 * y_1;
+	saturation += adj_cell_hor->saturation * x_comp * y_1;
+	saturation += adj_cell_vert->saturation * x_1 * y_comp;
+	saturation += adj_cell_diag->saturation * x_comp * y_comp;
 
 	return saturation;
 }
@@ -597,7 +627,7 @@ void trans_update_interior(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x)
 	/* Selects the configuration of cells */
 	assign_cells(mesh_old, &adj_cell_hor, &adj_cell_vert, &adj_cell_diag, cur_y, cur_x, quad);
 
-	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
@@ -616,6 +646,8 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
+	if (cur_x == 0)
+		printf("ycomp: %e, xcomp: %e\n", y_comp / mesh->dim.h, x_comp / mesh->dim.h);
 	/* Gets the quadrant the foot is in */
 	int quad = get_quadrant(y_comp, x_comp);
 
@@ -708,7 +740,7 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 			break;
 	}
 
-	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 }
 
@@ -842,7 +874,7 @@ void trans_update_corner(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 			}
 	}
 
-	cur_cell->saturation_prev = trans_get_average_sat(cur_cell_old, adj_cell_hor,
+	cur_cell->saturation = trans_get_average_sat(cur_cell_old, adj_cell_hor,
 							adj_cell_vert, adj_cell_diag, y_comp, x_comp);
 	// printf("sat: %e\n", cur_cell->saturation);
 }

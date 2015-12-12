@@ -526,9 +526,9 @@ void mesh_update_saturation_time(mesh_t *mesh)
 {
     cell_t *cur_cell;
 
-    for (int i = 0; i < mesh->dim.ydim; i++) {
-        for (int j = 0; j < mesh->dim.xdim; j++) {
-            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+    for (int i = 0; i < mesh->dim.ydim + 2; i++) {
+        for (int j = 0; j < mesh->dim.xdim + 2; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX_INC_PAD(i, j)];
             cur_cell->saturation_prev = cur_cell->saturation;
         }
     }
@@ -650,9 +650,10 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     mesh_old->dim.dt_transport = remainder_ts;
 
     mesh_update(mesh, mesh_old, block_type, &cell_trans_ops);
+    mpi_comm(mesh, send_vec, rec_vec, block_type, rank, SAT_MODE);
 
     /* sets current s to s_prev */
-    // mesh_update_saturation_time(mesh);
+    mesh_update_saturation_time(mesh);
 
     mesh_copy(mesh, mesh_old);
 

@@ -26,6 +26,9 @@ if __name__ == '__main__':
     xi = 2 * diff1 / 400
     A = xi / (beta * xi - 1)
     phi_h_dt = 0.2 * 400 / 86400
+    sum_A = 7.306955e-12
+    sum_A_R = -1.027624e-07
+    g = 5.171493e-06
 
     print lam.subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0})
     print sp.Derivative(lam_w, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, s:0.21})
@@ -38,5 +41,5 @@ if __name__ == '__main__':
     print 'xi: %e' % (xi)
     print 'A: %e' % (A)
     print 'phi_h_dt: %e' % (phi_h_dt)
-    print 'Sat: %s' % repr(phi_h_dt * 0.84 / (phi_h_dt + 2 * A))
+    print 'Sat: %s' % repr((g*400 + sum_A_R + phi_h_dt * 0.21) / (phi_h_dt + sum_A))
     # sp.plotting.plot(sp.Derivative(p_c, s).doit().subs({s_rw:0.2, s_ro: 0.15, mu_w:0.5, mu_o:10, eta:3000}), (s, 0.21, 0.84))

@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import ConfigParser as cfg
 
 if __name__ == '__main__':
-    dim = 8
+    parser = cfg.ConfigParser()
+    parser.read('input/config.ini')
+    dim = parser.getint('dimensions', 'xdim')
 
     vel_y = np.reshape(np.fromfile('output/velocity_y.dat', dtype = np.float64), (dim, dim))
     vel_x = np.reshape(np.fromfile('output/velocity_x.dat', dtype = np.float64), (dim, dim))

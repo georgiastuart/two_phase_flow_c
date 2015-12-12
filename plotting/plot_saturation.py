@@ -7,8 +7,6 @@ if __name__ == '__main__':
     parser.read('input/config.ini')
     dim = parser.getint('dimensions', 'xdim')
 
-    print dim
-
     saturation = np.reshape(np.fromfile('output/saturation.dat', dtype = np.float64), (dim, dim))
 
     title = "Saturation Field %d x %d" % (dim, dim)
@@ -20,7 +18,7 @@ if __name__ == '__main__':
     plt.gca().invert_yaxis()
     plt.show()
 
-    plt.contour(saturation)
+    plt.contour(saturation, 15)
     plt.title(title)
     plt.colorbar()
     plt.axis([0, dim, 0, dim])

@@ -106,6 +106,10 @@ void set_linearity(int linearity)
 /* Total mobility, lambda */
 double total_mobility(cell_t *cell, global_mesh_params_t *global)
 {
+    // printf("rel_perm_o: %e\n", lin_ops->rel_perm_o(cell, global));
+    // printf("rel_perm_w: %e\n", lin_ops->rel_perm_w(cell, global));
+    // printf("visc o %e\n", global->visc_o);
+    // printf("visc w %e\n", global->visc_w);
     return (lin_ops->rel_perm_o(cell, global) / global->visc_o +
            lin_ops->rel_perm_w(cell, global) / global->visc_w);
 }
@@ -131,6 +135,9 @@ double phase_mobility_w(cell_t *cell, global_mesh_params_t *global)
 {
     double total_mob = total_mobility(cell, global);
     double rel_perm = lin_ops->rel_perm_w(cell, global);
+    // printf("rel perm: %e\n", rel_perm);
+    // printf("total mob: %e\n", total_mob);
+    // printf("phase mob inside %e\n", rel_perm / (global->visc_w * total_mob));
 
     return rel_perm / (global->visc_w * total_mob);
 }

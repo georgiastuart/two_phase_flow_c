@@ -212,6 +212,8 @@ static void send_right(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mod
         cur_cell = &mesh->cell[INDEX((i + 1), mesh->dim.xdim)];
         if (mode) {
             send_vec->send_vec_1[i] = cur_cell->saturation;
+            if ((rank == 2) && (i == mesh->dim.ydim - 1))
+                printf("send vec %e\n", cur_cell->saturation);
         } else {
             send_vec->send_vec_1[i] = cur_cell->robin[1];
         }
@@ -307,6 +309,8 @@ static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mod
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), 0)];
         if (mode) {
+            if ((rank == 3) && (i == mesh->dim.ydim - 1))
+                printf("rec vec %e\n", rec_vec->receive_vec_1[i]);
             cur_cell->saturation = rec_vec->receive_vec_1[i];
         } else {
             cur_cell->robin[1] = rec_vec->receive_vec_1[i];
