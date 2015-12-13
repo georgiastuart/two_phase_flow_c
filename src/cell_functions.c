@@ -646,8 +646,8 @@ void trans_update_boundary(mesh_t *mesh, mesh_t *mesh_old, int cur_y, int cur_x,
 	cur_cell = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 	cur_cell_old = &mesh->cell[MESH_INDEX(cur_y, cur_x)];
 
-	if (cur_x == 0)
-		printf("ycomp: %e, xcomp: %e\n", y_comp / mesh->dim.h, x_comp / mesh->dim.h);
+	// if (cur_x == 0)
+	// 	printf("ycomp: %e, xcomp: %e\n", y_comp / mesh->dim.h, x_comp / mesh->dim.h);
 	/* Gets the quadrant the foot is in */
 	int quad = get_quadrant(y_comp, x_comp);
 

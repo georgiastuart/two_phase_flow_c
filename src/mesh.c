@@ -601,8 +601,15 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
 
     MPI_Allreduce(&max, &global_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
-    mesh->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
-    mesh_old->dim.dt_transport = (0.95 * mesh->dim.h / 2) / global_max;
+    double time = (0.95 * mesh->dim.h / 2) / global_max;
+
+    if (time > (mesh->dim.dt / 10.0)) {
+        mesh->dim.dt_transport = mesh->dim.dt / 10.0;
+        mesh_old->dim.dt_transport = mesh->dim.dt / 10.0;
+    } else {
+        mesh->dim.dt_transport = time;
+        mesh_old->dim.dt_transport = time;
+    }
 }
 
 /* Calculates phase mobility derivative of the meshes using information from mesh old */
