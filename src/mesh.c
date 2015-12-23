@@ -698,6 +698,7 @@ production_wells_t init_production_wells(mesh_t *mesh)
             if (cur_cell->source < 0) {
                 prod_wells.wells[well_count].y_pos = i;
                 prod_wells.wells[well_count].x_pos = j;
+                prod_wells.wells[well_count].oil_sat_recording[0] = cur_cell->saturation;
             }
         }
     }
@@ -705,6 +706,21 @@ production_wells_t init_production_wells(mesh_t *mesh)
 	return prod_wells;
 }
 
+/* Records production well data */
+void record_production_wells(production_wells_t *wells, mesh_t *mesh, int time_step)
+{
+    cell_t *cur_cell;
+    prod_well_t *cur_well;
+    int y, x;
+
+    for (int i = 0; i < wells->num_wells; i++) {
+        cur_well = &wells->wells[i];
+        y = cur_well->y_pos;
+        x = cur_well->x_pos;
+        cur_cell = &mesh->cell[MESH_INDEX(y, x)];
+        cur_well->oil_sat_recording[time_step] = 1.0 - cur_cell->saturation;
+    }
+}
 
 
 void setup_diffusion_test(mesh_t *mesh)

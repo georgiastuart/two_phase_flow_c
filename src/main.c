@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 
     /* Two phase flow time steps */
     int itr;
-    for (int i = 0; i < config.time_steps; i++) {
+    for (int i = 1; i < (config.time_steps + 1); i++) {
         itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
                     block_type, rank, &send_vec, &rec_vec);
 
@@ -103,6 +103,8 @@ int main(int argc, char* argv[])
             printf("Time %d: Diffusion finished after %f seconds and %d iterations.\n",
                         i, t1 - t2, itr);
         }
+
+        record_production_wells(&prod_wells, mesh, i);
     }
 
     // /* Writes out data to binaries */

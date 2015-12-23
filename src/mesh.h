@@ -58,6 +58,7 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
 
 /* Production Wells */
 production_wells_t init_production_wells(mesh_t *mesh);
+void record_production_wells(production_wells_t *wells, mesh_t *mesh, int time_step);
 
 /* For tests only */
 void setup_diffusion_test(mesh_t *mesh);
