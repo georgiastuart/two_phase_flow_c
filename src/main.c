@@ -78,33 +78,44 @@ int main(int argc, char* argv[])
     /* Two phase flow time steps */
     int itr;
     for (int i = 1; i < (config.time_steps + 1); i++) {
+        if (is_master)
+            progress_bar(i, config.time_steps);
+
         itr = mesh_pressure_iteration(mesh, mesh_old, config.conv_cutoff,
                     block_type, rank, &send_vec, &rec_vec);
 
-        if (is_master) {
-            t1 = MPI_Wtime();
-            printf("Time %d: Pressure finished after %f seconds and %d iterations.\n",
-                        i, t1 - t2, itr);
-        }
+        // if (is_master) {
+        //     t1 = MPI_Wtime();
+        //     printf("Time %d: Pressure finished after %f seconds and %d iterations.\n",
+        //                 i, t1 - t2, itr);
+        // }
 
         itr = mesh_transport_iteration(mesh, mesh_old, block_type, rank, &send_vec, &rec_vec);
 
-        if (is_master) {
-            t2 = MPI_Wtime();
-            printf("Time %d: Transport finished after %f seconds and %d iterations.\n",
-                        i, t2 - t1, itr);
-        }
+        // if (is_master) {
+        //     t2 = MPI_Wtime();
+        //     printf("Time %d: Transport finished after %f seconds and %d iterations.\n",
+        //                 i, t2 - t1, itr);
+        // }
 
         itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
                                            rank, &send_vec, &rec_vec);
 
-        if (is_master) {
-            t1 = MPI_Wtime();
-            printf("Time %d: Diffusion finished after %f seconds and %d iterations.\n",
-                        i, t1 - t2, itr);
-        }
+        // if (is_master) {
+        //     t1 = MPI_Wtime();
+        //     printf("Time %d: Diffusion finished after %f seconds and %d iterations.\n",
+        //                 i, t1 - t2, itr);
+        // }
 
         record_production_wells(&prod_wells, mesh, i);
+    }
+
+    if (is_master) {
+        t1 = MPI_Wtime();
+        double time = t1 - t2;
+        int mins = (int) (time / 60.0);
+        double secs = time - 60.0 * mins;
+        printf("Finished after %d minutes and %.02f seconds\n", mins, secs);
     }
 
     // /* Writes out data to binaries */

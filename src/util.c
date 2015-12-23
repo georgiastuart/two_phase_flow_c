@@ -377,6 +377,27 @@ void print_attribute(mesh_t *mesh, char *attribute)
     }
 }
 
+void progress_bar(int cur_time, int total_time) {
+    double cur_time_d = (double) cur_time;
+    double total_time_d = (double) total_time;
+    int percent = (int) (cur_time_d / total_time_d * 100.0);
+    int hashes = percent / 2;
+
+    printf("\rProgress: [%02d%%] [", percent);
+
+    for (int i = 0; i < hashes; i++)
+        printf("#");
+
+    for (int i = 0; i < (50 - hashes); i++)
+        printf("-");
+
+    printf("]");
+
+    if (percent == 100) {
+        printf("\n");
+    }
+}
+
 void debug_dump(mesh_t *mesh)
 {
 

@@ -603,9 +603,9 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old)
 
     double time = (0.95 * mesh->dim.h / 2) / global_max;
 
-    if (time > (mesh->dim.dt / 10.0)) {
-        mesh->dim.dt_transport = mesh->dim.dt / 10.0;
-        mesh_old->dim.dt_transport = mesh->dim.dt / 10.0;
+    if (time > (mesh->dim.dt / 5.0)) {
+        mesh->dim.dt_transport = mesh->dim.dt / 5.0;
+        mesh_old->dim.dt_transport = mesh->dim.dt / 5.0;
     } else {
         mesh->dim.dt_transport = time;
         mesh_old->dim.dt_transport = time;

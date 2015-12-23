@@ -33,5 +33,6 @@ double* read_file_pad(const char* file_name, int ydim, int xdim);
 void setup_files(const char* file_name, int ydim, int xdim, int num_subdomains_y,
                     int num_subdomains_x, int size, const char* mode);
 void print_attribute(mesh_t *mesh, char *attribute);
+void progress_bar(int cur_time, int total_time);
 
 #endif /* H_UTIL */
