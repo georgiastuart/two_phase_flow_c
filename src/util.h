@@ -10,6 +10,7 @@ typedef struct mesh mesh_t;
 typedef struct dim
 {
     int xdim, ydim, num_subdomains_x, num_subdomains_y, x_full_dim, y_full_dim;
+    int num_ts;
     double h, xlen, ylen, dt, dt_transport;
 } dim_t;
 

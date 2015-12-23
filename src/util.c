@@ -21,6 +21,7 @@ void init_dim(config_t *config, dim_t *dim)
     dim->num_subdomains_y = config->num_subdomains_y;
     dim->h = dim->xlen / dim->xdim;
     dim->dt = config->dt;
+    dim->num_ts = config->time_steps;
 }
 
 /* Necessary function for the config reader */

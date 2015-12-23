@@ -667,6 +667,46 @@ int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int
     return num_ts;
 }
 
+/* Initializes Production Wells */
+production_wells_t init_production_wells(mesh_t *mesh)
+{
+	cell_t *cur_cell;
+	production_wells_t prod_wells;
+
+	/* First sweep to determine number of production wells */
+	for (int i = 0; i < mesh->dim.ydim; i++) {
+		for (int j = 0; j < mesh->dim.xdim; j++) {
+			cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+			if (cur_cell->source < 0)
+				prod_wells.num_wells++;
+		}
+	}
+
+	/* Allocates memory for array of wells */
+	prod_wells.wells = malloc(prod_wells.num_wells * sizeof(prod_well_t));
+
+    /* Allocates memory for oil saturation recordings within wells */
+    for (int i = 0; i < prod_wells.num_wells; i++) {
+        prod_wells.wells[i].oil_sat_recording = malloc(mesh->dim.num_ts * sizeof(double));
+    }
+
+    /* Records the x and y position for each well */
+    int well_count = 0;
+    for (int i = 0; i < mesh->dim.ydim; i++) {
+        for (int j = 0; j < mesh->dim.xdim; j++) {
+            cur_cell = &mesh->cell[MESH_INDEX(i, j)];
+            if (cur_cell->source < 0) {
+                prod_wells.wells[well_count].y_pos = i;
+                prod_wells.wells[well_count].x_pos = j;
+            }
+        }
+    }
+
+	return prod_wells;
+}
+
+
+
 void setup_diffusion_test(mesh_t *mesh)
 {
     cell_t *cur_cell;

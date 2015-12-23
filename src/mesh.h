@@ -28,6 +28,18 @@ typedef struct mesh
     global_mesh_params_t global;
 } mesh_t;
 
+typedef struct prod_well
+{
+    int x_pos, y_pos;
+    double *oil_sat_recording;
+} prod_well_t;
+
+typedef struct production_wells
+{
+    int num_wells;
+    prod_well_t *wells;
+} production_wells_t;
+
 mesh_t* mesh_init_mesh(dim_t dim, double *perm, double *source, double *sat, config_t *config);
 void mesh_update(mesh_t *mesh, mesh_t *mesh_old, int block_type, const cell_ops_t *cell_ops);
 int mesh_press_convergence_check(mesh_t *mesh, mesh_t *mesh_old, double conv_cutoff, int rank);
@@ -44,7 +56,10 @@ void mesh_max_time_step(mesh_t *mesh, mesh_t *mesh_old);
 int mesh_transport_iteration(mesh_t *mesh, mesh_t *mesh_old, int block_type, int rank,
             send_vectors_t *send_vec, receive_vectors_t *rec_vec);
 
-/* For diffusion test only */
+/* Production Wells */
+production_wells_t init_production_wells(mesh_t *mesh);
+
+/* For tests only */
 void setup_diffusion_test(mesh_t *mesh);
 void setup_transport_test(mesh_t *mesh);
 
