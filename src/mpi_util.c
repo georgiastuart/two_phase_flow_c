@@ -9,8 +9,9 @@
 #define INDEX(y, x) (y * (mesh->dim.xdim + 2) + x)
 #define INDEX_NO_MESH(y, x, xdim) (y * (xdim) + x)
 #define NDIMS 2
-#define CONFIG_LEN 27
+#define CONFIG_LEN 28
 #define STR_LEN 100
+#define ARRAY_SPLIT 9999;
 
 void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_config_t)
 {
@@ -21,13 +22,15 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     /* Create type for config struct */
     const int nitems = CONFIG_LEN;
     int blocklengths[CONFIG_LEN] = {1, 1, 1, 1, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, 1,
-                            STR_LEN, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, STR_LEN, 1, 1, 1, STR_LEN};
+                            STR_LEN, STR_LEN, STR_LEN, 1, 1, 1, 1, 1, 1, STR_LEN,
+                            1, 1, 1, STR_LEN, STR_LEN};
     MPI_Datatype types[CONFIG_LEN] = {MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
                                 MPI_INT, MPI_INT, MPI_INT, MPI_CHAR, MPI_CHAR, MPI_CHAR,
                                 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                                MPI_DOUBLE, MPI_CHAR, MPI_INT, MPI_DOUBLE, MPI_INT, MPI_CHAR};
+                                MPI_DOUBLE, MPI_CHAR, MPI_INT, MPI_DOUBLE, MPI_INT, MPI_CHAR,
+                                MPI_CHAR};
     MPI_Aint offsets[CONFIG_LEN];
 
     offsets[0] = offsetof(config_t, xdim);
@@ -57,6 +60,7 @@ void mpi_setup(int *argc, char ***argv, int *rank, int *size, MPI_Datatype *mpi_
     offsets[24] = offsetof(config_t, dt);
     offsets[25] = offsetof(config_t, linearity);
     offsets[26] = offsetof(config_t, sat_file);
+    offsets[27] = offsetof(config_t, prod_well_out);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_config_t);
     MPI_Type_commit(mpi_config_t);
@@ -212,8 +216,6 @@ static void send_right(mesh_t *mesh, send_vectors_t *send_vec, int rank, int mod
         cur_cell = &mesh->cell[INDEX((i + 1), mesh->dim.xdim)];
         if (mode) {
             send_vec->send_vec_1[i] = cur_cell->saturation;
-            if ((rank == 2) && (i == mesh->dim.ydim - 1))
-                printf("send vec %e\n", cur_cell->saturation);
         } else {
             send_vec->send_vec_1[i] = cur_cell->robin[1];
         }
@@ -309,8 +311,6 @@ static void rec_left(mesh_t *mesh, receive_vectors_t *rec_vec, int rank, int mod
     for (i = 0; i < mesh->dim.ydim; i++) {
         cur_cell = &mesh->cell[INDEX((i + 1), 0)];
         if (mode) {
-            if ((rank == 3) && (i == mesh->dim.ydim - 1))
-                printf("rec vec %e\n", rec_vec->receive_vec_1[i]);
             cur_cell->saturation = rec_vec->receive_vec_1[i];
         } else {
             cur_cell->robin[1] = rec_vec->receive_vec_1[i];
@@ -614,4 +614,82 @@ void write_data(mesh_t *mesh, config_t *config, int size, int rank, const char *
 
     MPI_File_close(&fh);
     free(write_buffer);
+}
+
+/* Writes production wells */
+void write_prod_well_data(production_wells_t *wells, config_t *config, int size, int rank)
+{
+    MPI_File fh;
+    double *buffer;
+    int buffer_size, num_doubles;
+    int offset, send_offset, index_base;
+
+    /* Allocates memory for buffer */
+    num_doubles = config->time_steps + 3;
+    buffer_size = wells->num_wells * (num_doubles) * sizeof(double);
+    buffer = malloc(buffer_size);
+
+    /* Deletes old file */
+    MPI_File_delete(config->prod_well_out, MPI_INFO_NULL);
+
+    /* Opens file */
+    int file_open_error = MPI_File_open(MPI_COMM_WORLD, config->prod_well_out,
+                    MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+
+    if (file_open_error != MPI_SUCCESS) {
+        printf("Rank %d file read error\n", rank);
+        exit(1);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    /* Sets up offsets */
+    offset = 0;
+
+    if (rank != 0) {
+        MPI_Recv(&offset, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    send_offset = offset + buffer_size;
+
+    if (rank != (size - 1)) {
+        MPI_Send(&send_offset, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+    }
+
+    /* Reads data into buffer */
+    for (int i = 0; i < wells->num_wells; i++) {
+        index_base = i * num_doubles;
+        buffer[0 + index_base] = (double) wells->wells[i].y_pos;
+        buffer[1 + index_base] = (double) wells->wells[i].x_pos;
+
+        for (int j = 0; j < config->time_steps; j++) {
+            buffer[2 + j + index_base] = wells->wells[i].oil_sat_recording[j];
+            // printf("Buffer: %e\n", buffer[2 + j + index_base]);
+            // printf("Oil sat rec: %e\n", wells->wells[i].oil_sat_recording[j]);
+        }
+
+        buffer[2 + config->time_steps + index_base] = ARRAY_SPLIT;
+    }
+
+    // printf("num doubles %d\n", num_doubles);
+    /* Writes data to file at specified offset */
+    if (wells->num_wells > 0) {
+        int file_write_error = MPI_File_write_at(fh, offset, buffer, num_doubles,
+                                MPI_DOUBLE, MPI_STATUS_IGNORE);
+
+        if (file_write_error != MPI_SUCCESS) {
+            printf("Rank %d failed to write file\n", rank);
+            exit(1);
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("Finished writing production well file\n");
+    }
+
+    MPI_File_close(&fh);
+
+    free(buffer);
 }

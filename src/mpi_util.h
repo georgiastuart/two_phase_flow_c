@@ -6,6 +6,9 @@
 struct mesh;
 typedef struct mesh mesh_t;
 
+struct production_wells;
+typedef struct production_wells production_wells_t;
+
 typedef struct send_vectors
 {
     double *send_vec_0, *send_vec_1, *send_vec_2, *send_vec_3;
@@ -24,6 +27,7 @@ void mpi_comm(mesh_t *mesh, send_vectors_t *send_vec, receive_vectors_t *rec_vec
             int block_type, int rank, int mode);
 int mpi_get_block_type(int rank, int num_subdomains_y, int num_subdomains_x);
 void write_data(mesh_t *mesh, config_t *config, int size, int rank, const char *mode);
+void write_prod_well_data(production_wells_t *wells, config_t *config, int size, int rank);
 
 
 #endif  /* H_MPI_UTIL */

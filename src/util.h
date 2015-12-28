@@ -20,6 +20,7 @@ typedef struct config
     double xlen, ylen, dt;
     char perm_file[100], src_file[100], pressure_out[100], velocity_y_out[100];
     char velocity_x_out[100], saturation_out[100], sat_file[100];
+    char prod_well_out[100];
     double perm_scale, perm_strength, conv_cutoff, beta_coef;
     int linearity;
     int num_processes, num_subdomains_x, num_subdomains_y;

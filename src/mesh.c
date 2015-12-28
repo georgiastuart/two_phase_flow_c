@@ -698,7 +698,7 @@ production_wells_t init_production_wells(mesh_t *mesh)
             if (cur_cell->source < 0) {
                 prod_wells.wells[well_count].y_pos = i;
                 prod_wells.wells[well_count].x_pos = j;
-                prod_wells.wells[well_count].oil_sat_recording[0] = cur_cell->saturation;
+                prod_wells.wells[well_count].oil_sat_recording[0] = 1 - cur_cell->saturation;
             }
         }
     }
@@ -720,6 +720,16 @@ void record_production_wells(production_wells_t *wells, mesh_t *mesh, int time_s
         cur_cell = &mesh->cell[MESH_INDEX(y, x)];
         cur_well->oil_sat_recording[time_step] = 1.0 - cur_cell->saturation;
     }
+}
+
+/* Frees memory from production wells */
+void free_production_wells(production_wells_t *wells)
+{
+    for (int i = 0; i < wells->num_wells; i++) {
+        free(wells->wells[i].oil_sat_recording);
+    }
+
+    free(wells);
 }
 
 

@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     /* Initializes Production Wells */
     prod_wells = init_production_wells(mesh);
 
-    printf("Num prod: %d\n", prod_wells.num_wells);
+    // printf("Num prod: %d\n", prod_wells.num_wells);
 
     if (is_master) {
         t2 = MPI_Wtime();
@@ -98,8 +98,11 @@ int main(int argc, char* argv[])
         //                 i, t2 - t1, itr);
         // }
 
-        itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
-                                           rank, &send_vec, &rec_vec);
+        if (!config.linearity) {
+            itr = mesh_diffusion_iteration(mesh, mesh_old, config.conv_cutoff, block_type,
+                                               rank, &send_vec, &rec_vec);
+        }
+
 
         // if (is_master) {
         //     t1 = MPI_Wtime();
@@ -118,11 +121,12 @@ int main(int argc, char* argv[])
         printf("Finished after %d minutes and %.02f seconds\n", mins, secs);
     }
 
-    // /* Writes out data to binaries */
+    /* Writes out data to binaries */
     write_data(mesh, &config, size, rank, "pressure");
     write_data(mesh, &config, size, rank, "velocity_y");
     write_data(mesh, &config, size, rank, "velocity_x");
     write_data(mesh, &config, size, rank, "saturation");
+    write_prod_well_data(&prod_wells, &config, size, rank);
 
 
     /* Shuts down MPI and frees memory */

@@ -101,6 +101,8 @@ static int config_helper(void *config, const char *section, const char *name,
         strcpy(pconfig->velocity_x_out, value);
     } else if (MATCH("out_files", "saturation_out")) {
         strcpy(pconfig->saturation_out, value);
+    } else if (MATCH("out_files", "prod_well_out")) {
+        strcpy(pconfig->prod_well_out, value);
     } else {
         /* Unknown Section or Name */
         return 0;
